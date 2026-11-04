@@ -3,8 +3,8 @@
  * price maths, earned labels, unique plans, fallback notices, sort order and
  * "Why this plan" accuracy (English and Spanish, home and business).
  */
-import { ADDRESSES, BUNDLE_PRESETS, PLANS, SERVICE_ORDER, type ServiceId } from "../data/sample";
-import { detectAddressType, getAddressSuggestions } from "../lib/address";
+import { ADDRESSES, ADDRESS_TEMPLATES, BUNDLE_PRESETS, PLANS, SERVICE_ORDER, type ServiceId } from "../data/sample";
+import { getAddressSuggestions, hasBusinessHint } from "../lib/address";
 import { allInAfter, allInNow, isPriced, labelsFor, money, resultsFor, speedText, valueMetric, whyThisPlan } from "../lib/plans";
 
 let fails = 0;
@@ -15,23 +15,23 @@ const ok = (c: boolean, m: string) => {
   }
 };
 
-// Address autocomplete: never empty, and the type is detected from the address itself
-for (const [q, want] of [
-  ["658", null],
-  ["12 Oak St", "residential"],
-  ["9 Elm Ave Apt 4", "residential"],
-  ["500 Main St Suite 200", "business"],
-  ["77 Tech Park Dr", "business"],
-  ["1200 Commerce Blvd", "business"],
-  ["4 Willow Court", "residential"],
-] as const) {
+// Address autocomplete (same engine as the original one-pager): empty input shows
+// nothing, typed input always gets suggestions, and every suggestion carries its type.
+ok(getAddressSuggestions("").length === 0, "no suggestions before typing");
+ok(getAddressSuggestions("658").every((a) => ADDRESSES.some((s) => s.id === a.id)), '"658" matches the fixed suggestions');
+for (const q of ["658", "12 Oak St", "9 Elm Ave Apt 4", "500 Main St Suite 200", "77 Tech Park Dr", "Fannin", "4 Willow Court"]) {
   const list = getAddressSuggestions(q);
-  ok(list.length > 0, `address "${q}" has suggestions`);
+  ok(list.length > 0 && list.length <= 5, `address "${q}" has 1 to 5 suggestions`);
   ok(new Set(list.map((a) => a.id)).size === list.length, `address "${q}" suggestions unique`);
-  if (want) ok(list[0].type === want && detectAddressType(q) === want, `address "${q}" detected as ${want} (got ${list[0].type})`);
-  console.log(`address ${q.padEnd(24)} -> ${list[0].line1}, ${list[0].city} [${list[0].type}]`);
+  for (const a of list) {
+    const fixed = ADDRESSES.find((s) => s.id === a.id);
+    const tpl = ADDRESS_TEMPLATES.find((x) => x.city === a.city);
+    const want = fixed ? fixed.type : hasBusinessHint(a.line1) ? "business" : tpl?.type;
+    ok(a.type === want, `address "${q}" -> ${a.line1}, ${a.city} typed ${a.type}, expected ${want}`);
+  }
+  if (hasBusinessHint(q)) ok(list.every((a) => a.type === "business"), `address "${q}" with business words is always business`);
+  console.log(`address ${q.padEnd(24)} -> ${list.map((a) => `${a.line1}, ${a.city} [${a.type}]`).join(" | ")}`);
 }
-for (const a of ADDRESSES) ok(detectAddressType(a.line1) === a.type, `sample ${a.line1} type matches detection`);
 
 // Required technology coverage
 for (const tech of ["fiber", "cable", "fiveG", "dsl", "satellite"] as const) ok(PLANS.some((p) => p.tech === tech && p.services.includes("internet")), `has a ${tech} internet plan`);

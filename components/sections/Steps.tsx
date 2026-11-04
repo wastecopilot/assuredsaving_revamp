@@ -7,7 +7,7 @@ import { DEVICES, GENRES, PACKS, USAGE, type SampleAddress } from "@/data/sample
 import { formatAddress as fmt, getAddressSuggestions } from "@/lib/address";
 import { STAGE, nextStage, useStore, type State } from "@/lib/store";
 import { motion as m, service } from "@/lib/tokens";
-import { Button, Chip, Input, Skeleton, Slider } from "../ui";
+import { Button, Chip, Input, Slider } from "../ui";
 import { Heading, Section } from "./Section";
 
 /** Continue button label depends on what comes next. */
@@ -19,65 +19,61 @@ function useNextLabel(from: number) {
 }
 
 /* ============================== Name & address ============================== */
+/**
+ * Same flow as the original one-pager (AddressVerification.tsx):
+ * 1. Name first. The address block appears once the name is valid.
+ * 2. Suggestions open as soon as the visitor types, and are built from the typed text.
+ * 3. Choosing a suggestion verifies it, detects residential or business from the
+ *    suggestion, and unlocks the next section straight away (no extra button).
+ * 4. Editing or clearing a verified address collapses everything below it.
+ */
 export function AddressSection() {
   const { s, dispatch, t, goNext } = useStore();
-  const reduce = useReducedMotion();
   const [q, setQ] = useState(s.address ? fmt(s.address) : "");
-  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [active, setActive] = useState(-1);
-  const [checking, setChecking] = useState(false);
-  const [tried, setTried] = useState(false);
   const listId = useId();
   const wrap = useRef<HTMLDivElement>(null);
-  const nextLabel = useNextLabel(STAGE.address);
 
-  // Suggestions are built from what was typed; each carries its auto-detected type.
-  const matches = s.address && fmt(s.address) === q ? getAddressSuggestions("") : getAddressSuggestions(q);
+  const nameValid = s.name.trim().length >= 2;
+  const verified = !!s.address && fmt(s.address) === q;
+  const matches = verified ? [] : getAddressSuggestions(q);
+  const open = q.trim().length > 0 && !dismissed && matches.length > 0;
 
   useEffect(() => {
-    const onDown = (e: MouseEvent) => wrap.current && !wrap.current.contains(e.target as Node) && setOpen(false);
+    const onDown = (e: MouseEvent) => wrap.current && !wrap.current.contains(e.target as Node) && setDismissed(true);
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  /** Editing a verified address invalidates it and collapses the sections below. */
+  const collapse = () => dispatch({ type: "patch", patch: { address: null, stage: Math.min(s.stage, STAGE.address), scanDone: false, usage: [] } });
+
   const choose = (a: SampleAddress) => {
     setQ(fmt(a));
-    setOpen(false);
+    setDismissed(true);
     setActive(-1);
-    setChecking(true);
-    dispatch({ type: "patch", patch: { address: null } });
-    window.setTimeout(() => {
-      setChecking(false);
-      dispatch({ type: "patch", patch: { address: a, addressType: a.type, usage: [] } });
-    }, reduce ? 0 : 650);
+    dispatch({ type: "patch", patch: { address: a, addressType: a.type, usage: [] } });
+    goNext(STAGE.address);
   };
   const clear = () => {
     setQ("");
-    dispatch({ type: "patch", patch: { address: null, stage: Math.min(s.stage, STAGE.address), scanDone: false } });
+    setDismissed(true);
+    setActive(-1);
+    collapse();
   };
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!open) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setOpen(true);
-      setActive((i) => Math.min(i + 1, matches.length - 1));
+      setActive((i) => (i + 1) % matches.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && open && matches.length) {
+      setActive((i) => (i <= 0 ? matches.length - 1 : i - 1));
+    } else if (e.key === "Enter") {
       e.preventDefault();
       choose(matches[Math.max(active, 0)]);
-    } else if (e.key === "Escape") setOpen(false);
-  };
-
-  const nameErr = tried && s.name.trim().length < 2 ? t("nameErr") : null;
-  const addrErr = tried && !s.address ? t("addressErr") : null;
-  const go = () => {
-    if (s.name.trim().length < 2 || !s.address) {
-      setTried(true);
-      window.setTimeout(() => document.querySelector<HTMLElement>("#section-address [aria-invalid='true']")?.focus(), 20);
-      return;
-    }
-    goNext(STAGE.address);
+    } else if (e.key === "Escape") setDismissed(true);
   };
 
   return (
@@ -90,12 +86,12 @@ export function AddressSection() {
           autoComplete="name"
           value={s.name}
           onChange={(e) => dispatch({ type: "patch", patch: { name: e.target.value } })}
-          error={nameErr}
           icon={<User aria-hidden className="size-5" />}
-          trailing={s.name.trim().length >= 2 ? <span className="flex size-8 items-center justify-center rounded-full bg-security text-ink"><Check aria-hidden className="size-4" strokeWidth={3} /></span> : null}
+          hint={nameValid ? undefined : t("nameFirst")}
+          trailing={nameValid ? <span className="flex size-8 items-center justify-center rounded-full bg-security text-ink"><Check aria-hidden className="size-4" strokeWidth={3} /></span> : null}
         />
         <AnimatePresence>
-          {s.name.trim().length >= 2 && (
+          {nameValid && (
             <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-bold text-primary">
               <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-white">{s.name.trim()[0]?.toUpperCase()}</span>
               {t("welcome", { name: s.name.trim().split(/\s+/)[0] })}
@@ -104,100 +100,85 @@ export function AddressSection() {
         </AnimatePresence>
       </div>
 
-      <div className="mt-10 border-t border-line pt-10">
-        <Heading id="addr-h" eyebrow={t("nowAddress")} a={t("addressTitleA")} b={t("addressTitleB")} sub={t("addressSub")} />
-        <div ref={wrap} className="relative mt-6 max-w-xl">
-          <label htmlFor="addr" className="mb-2 block text-sm font-semibold text-ink">
-            {t("addressLabel")}
-          </label>
-          <div className="relative">
-            <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
-            <input
-              id="addr"
-              role="combobox"
-              aria-expanded={open}
-              aria-controls={listId}
-              aria-autocomplete="list"
-              aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
-              aria-invalid={addrErr ? true : undefined}
-              aria-describedby={addrErr ? "addr-err" : "addr-note"}
-              autoComplete="off"
-              placeholder={t("addressPlaceholder")}
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setOpen(true);
-                setActive(-1);
-                if (s.address) dispatch({ type: "patch", patch: { address: null } });
-              }}
-              onFocus={(e) => {
-                setOpen(true);
-                // On phones, lift the field to the top so suggestions stay above the keyboard.
-                if (window.innerWidth < 640) {
-                  const el = e.currentTarget;
-                  window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 150);
-                }
-              }}
-              onKeyDown={onKey}
-              className={clsx(
-                "min-h-14 w-full rounded-md border-2 bg-surface pl-12 pr-14 text-base text-ink transition-colors placeholder:text-muted focus:border-primary focus:outline-none",
-                addrErr ? "border-danger" : "border-line-strong",
-              )}
-            />
-            {q && (
-              <button type="button" onClick={clear} aria-label={t("clearAddress")} className="absolute right-1.5 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-surface2 hover:text-ink">
-                <X aria-hidden className="size-5" />
-              </button>
-            )}
-          </div>
-          <ul id={listId} role="listbox" aria-label={t("addressLabel")} hidden={!open} className="absolute inset-x-0 top-full z-20 mt-2 max-h-80 overflow-auto rounded-lg border border-line bg-surface p-1.5 shadow-overlay">
-            {matches.length === 0 && <li className="px-3 py-3 text-sm text-muted">{t("noMatch")}</li>}
-            {matches.map((a, i) => (
-              <li
-                key={a.id}
-                id={`${listId}-${i}`}
-                role="option"
-                aria-selected={i === active}
-                onMouseDown={(e) => e.preventDefault()}
-                onMouseMove={() => { if (active !== i) setActive(i); }}
-                onClick={() => choose(a)}
-                className={clsx("flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-3 py-2", i === active && "bg-primary-soft")}
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface2 text-primary">
-                  {a.type === "business" ? <Building2 aria-hidden className="size-4" /> : <MapPin aria-hidden className="size-4" />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold leading-snug text-ink">{a.line1}</span>
-                  <span className="block text-xs text-muted">{a.city}, {a.state} {a.zip}</span>
-                </span>
-                <span className="rounded-full bg-phone-soft px-2 py-0.5 text-[11px] font-bold text-phone-text">{t("sample")}</span>
-              </li>
-            ))}
-          </ul>
-          {addrErr ? (
-            <p id="addr-err" role="alert" className="mt-2 text-sm font-medium text-danger">{addrErr}</p>
-          ) : (
-            <p id="addr-note" className="mt-2 text-xs text-muted">{t("sampleNote")}</p>
-          )}
-        </div>
-
-        <div aria-live="polite">
-          {checking && (
-            <div className="mt-6 rounded-lg border border-line p-5">
-              <p className="mb-3 text-sm font-semibold text-muted">{t("checking")}</p>
-              <Skeleton className="h-28 w-full" />
-              <Skeleton className="mt-3 h-5 w-2/3" />
+      <AnimatePresence initial={false}>
+        {nameValid && (
+          <motion.div key="addr-block" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={m.soft} className="mt-10 border-t border-line pt-10">
+            <Heading id="addr-h" eyebrow={t("nowAddress")} a={t("addressTitleA")} b={t("addressTitleB")} sub={t("addressSub")} />
+            <div ref={wrap} className="relative z-20 mt-6 max-w-xl">
+              <label htmlFor="addr" className="mb-2 block text-sm font-semibold text-ink">
+                {t("addressLabel")}
+              </label>
+              <div className="relative">
+                <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
+                <input
+                  id="addr"
+                  role="combobox"
+                  aria-expanded={open}
+                  aria-controls={listId}
+                  aria-autocomplete="list"
+                  aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+                  aria-describedby="addr-note"
+                  autoComplete="off"
+                  placeholder={t("addressPlaceholder")}
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setDismissed(false);
+                    setActive(-1);
+                    if (s.address) collapse();
+                  }}
+                  onFocus={(e) => {
+                    setDismissed(false);
+                    // On phones, lift the field to the top so suggestions stay above the keyboard.
+                    if (window.innerWidth < 640) {
+                      const el = e.currentTarget;
+                      window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 150);
+                    }
+                  }}
+                  onKeyDown={onKey}
+                  className="min-h-14 w-full rounded-md border-2 border-line-strong bg-surface pl-12 pr-14 text-base text-ink transition-colors placeholder:text-muted focus:border-primary focus:outline-none"
+                />
+                {q && (
+                  <button type="button" onClick={clear} aria-label={t("clearAddress")} className="absolute right-1.5 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-surface2 hover:text-ink">
+                    <X aria-hidden className="size-5" />
+                  </button>
+                )}
+              </div>
+              <ul id={listId} role="listbox" aria-label={t("addressLabel")} hidden={!open} className="absolute inset-x-0 top-full z-30 mt-2 max-h-80 overflow-auto rounded-lg border border-line bg-surface p-1.5 shadow-overlay">
+                {matches.map((a, i) => (
+                  <li
+                    key={a.id}
+                    id={`${listId}-${i}`}
+                    role="option"
+                    aria-selected={i === active}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseMove={() => {
+                      if (active !== i) setActive(i);
+                    }}
+                    onClick={() => choose(a)}
+                    className={clsx("flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-3 py-2", i === active && "bg-primary-soft")}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface2 text-primary">
+                      <MapPin aria-hidden className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold leading-snug text-ink">{a.line1}</span>
+                      <span className="block text-xs text-muted">
+                        {a.city}, {a.state} {a.zip}
+                      </span>
+                    </span>
+                    <ArrowRight aria-hidden className="size-4 shrink-0 text-muted" />
+                  </li>
+                ))}
+              </ul>
+              <p id="addr-note" className="mt-2 text-xs text-muted">
+                {t("sampleNote")}
+              </p>
             </div>
-          )}
-          {s.address && !checking && <FoundCard />}
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <Button size="lg" onClick={go} iconRight={<ArrowRight aria-hidden className="size-5" strokeWidth={2.6} />} className="w-full sm:w-auto sm:min-w-72">
-          {nextLabel}
-        </Button>
-      </div>
+            <div aria-live="polite">{s.address && verified && <FoundCard />}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Section>
   );
 }

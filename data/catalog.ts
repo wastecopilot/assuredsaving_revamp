@@ -35,13 +35,22 @@ export interface SampleAddress {
   type: AddressType;
   timeZone: string;
 }
+/** Fixed suggestions, the same five as the original one-pager (each with its type). */
 export const ADDRESSES: SampleAddress[] = [
-  { id: "a1", line1: "1420 Maple Ridge Dr", city: "Austin", state: "TX", zip: "78745", type: "residential", timeZone: "America/Chicago" },
-  { id: "a2", line1: "88 Harbor View Ave, Suite 300", city: "Tampa", state: "FL", zip: "33602", type: "business", timeZone: "America/New_York" },
-  { id: "a3", line1: "2207 County Road 14", city: "Bozeman", state: "MT", zip: "59715", type: "residential", timeZone: "America/Denver" },
-  { id: "a4", line1: "615 Lakeshore Blvd", city: "Columbus", state: "OH", zip: "43215", type: "residential", timeZone: "America/New_York" },
-  { id: "a5", line1: "410 Commerce Park Way", city: "Raleigh", state: "NC", zip: "27601", type: "business", timeZone: "America/New_York" },
-  { id: "a6", line1: "73 Orchard Lane", city: "Sacramento", state: "CA", zip: "95814", type: "residential", timeZone: "America/Los_Angeles" },
+  { id: "s1", line1: "658 FL-60", city: "Lake Wales", state: "FL", zip: "33853", type: "business", timeZone: "America/New_York" },
+  { id: "s2", line1: "6581 Lost Canyon Ranch Road", city: "Castle Rock", state: "CO", zip: "80104", type: "residential", timeZone: "America/Denver" },
+  { id: "s3", line1: "6580 Fannin Street", city: "Houston", state: "TX", zip: "77030", type: "business", timeZone: "America/Chicago" },
+  { id: "s4", line1: "6585 Crescent Drive", city: "Norcross", state: "GA", zip: "30071", type: "residential", timeZone: "America/New_York" },
+  { id: "s5", line1: "6584 South Parker Road", city: "Aurora", state: "CO", zip: "80014", type: "residential", timeZone: "America/Denver" },
+];
+
+/** Locations used to complete what the visitor types (same templates as the original). */
+export const ADDRESS_TEMPLATES: (Omit<SampleAddress, "id" | "line1"> & { street: string })[] = [
+  { street: "FL-60", city: "Lake Wales", state: "FL", zip: "33853", type: "business", timeZone: "America/New_York" },
+  { street: "Lost Canyon Ranch Road", city: "Castle Rock", state: "CO", zip: "80104", type: "residential", timeZone: "America/Denver" },
+  { street: "Fannin Street", city: "Houston", state: "TX", zip: "77030", type: "business", timeZone: "America/Chicago" },
+  { street: "Crescent Drive", city: "Norcross", state: "GA", zip: "30071", type: "residential", timeZone: "America/New_York" },
+  { street: "South Parker Road", city: "Aurora", state: "CO", zip: "80014", type: "residential", timeZone: "America/Denver" },
 ];
 
 /* ------------------------------------------------------------------ */

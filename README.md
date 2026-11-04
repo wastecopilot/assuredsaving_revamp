@@ -56,7 +56,7 @@ Or from a terminal: `npm i -g vercel`, then `vercel`, then `vercel --prod`.
 | Consent implied by a dense paragraph, and "8AM–9PM" doesn't match calling hours | The callback runs in steps: details, consent (AI-call box **unchecked**, optional SMS consent separate), phone verification (mocked), then call now or schedule. Times are limited to Mon to Sat, 9 AM to 8 PM in the chosen time zone. Errors are inline, and a do-not-call state offers a support route. |
 | Tiny, letter-spaced, low-contrast text | Light theme, bigger type, and AA-checked colours. |
 | A real person's name and email pre-filled | The fields start empty. |
-| Visitor has to know whether their address is home or business | Detected automatically from the typed address (`lib/address.ts`), shown as a label on the "Address found" card. Like the original one-pager, any typed street gets suggestions. |
+| Visitor has to know whether their address is home or business | Detected automatically: each suggestion carries its type, shown as a label on the "Address found" card. There is no manual switch. |
 | Sponsored ad slot during the scan | Removed. |
 
 ## Design system
@@ -69,7 +69,19 @@ Or from a terminal: `npm i -g vercel`, then `vercel`, then `vercel --prod`.
 
 ## Demo tips
 
-Type any street. Suggestions are completed with sample cities, with no real lookup. The address type is detected from the address: words like Suite, Floor, Office, Plaza, Center, Commerce or Business make it a **business** address; anything else, including Apt and Unit, is **residential**. Try `500 Main St Suite 200` or `12 Oak St`. Choose **Internet + TV + Mobile** to see the "bundle not available" notice.
+### Address flow
+
+The address flow is the same as the original one-pager (`wastecopilot/assuredsaving`, `getAddressSuggestions` and `AddressVerification`), ported into `lib/address.ts` and `components/sections/Steps.tsx`:
+
+1. Enter your name. The address search appears once the name is valid.
+2. Type any part of an address. The five fixed sample addresses match first. If fewer than 3 match, suggestions are built from what you typed, using the same five sample locations. A bare house number such as `658` goes in front of the sample street.
+3. Each suggestion carries its own type, **residential** or **business**. Typed text with words like Suite, Floor, Office, Plaza, Center, Commerce or Business is always business.
+4. Picking a suggestion (click, or Enter for the first one) verifies it, shows the "Address found" card with the detected type, and unlocks the next section straight away.
+5. Editing or clearing a verified address folds the sections below it back up.
+
+This is mocked, with no real lookup. A live site would get the address and its type from an address service.
+
+Try `658`, `Fannin` or `500 Main St Suite 200`. Choose **Internet + TV + Mobile** to see the "bundle not available" notice.
 
 In the callback:
 - Any 6-digit code verifies, and `000000` shows the wrong-code message.
