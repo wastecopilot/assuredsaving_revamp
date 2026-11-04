@@ -44,7 +44,8 @@ The page never navigates. Each section unlocks below the previous one and the pa
 | 12 | Tiny letter-spaced caps, low-contrast grey on navy, weak hierarchy. | Everywhere | A light, bright theme. A 16px+ body text and a big friendly display face. Every text colour pair is AA-checked by `npm run contrast`. |
 | 13 | A real person's name and email are pre-filled in the code and on the live page. | Address | The fields start empty. |
 | 14 | A sponsored ad slot sits in the middle of the scan. | Live scan | Removed from the preview, because it isn't part of the user task. |
-| 15 | The 5 scan stages claim "live inventory from 6 providers". | Live scan | Honest wording: "Checking sample plans for this address". |
+| 15 | The 5 scan stages claim "live inventory from 6 providers". | Live scan | Honest wording that describes what the page does (finding providers, checking promos and fees, ranking by all-in price). |
+| 16 | A DIRECTV tier is flagged "Most Popular" with no data behind it. The intro price is big and "Reverts to…" is tiny. | DIRECTV tiers | No popularity claim. The intro price and the price after it are shown at the same size. |
 
 ## Design plan
 

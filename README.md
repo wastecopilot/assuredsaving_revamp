@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assured Saving: bright one-pager revamp (design preview)
 
-## Getting Started
+A redesign of the Assured Saving one-pager (https://assuredsaving.vercel.app/). It has the same sections, in the same order, with the same content and flow:
 
-First, run the development server:
+1. Services and bundles
+2. Name and address
+3. Usage
+4. TV setup (when TV is chosen)
+5. Live scan
+6. Results
+7. Plan details and the Aria callback
+
+The visual design and the UX are new: a light, bright and vibrant look with honest pricing logic.
+
+Everything runs on mocked sample data (`data/sample.ts` and `data/catalog.ts`). Nothing calls a real service, places a call or sends a text. The research and the fix plan are in [`docs/audit.md`](docs/audit.md).
+
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build`, then `npm start` | Production build and server |
+| `npm run typecheck` / `npm run lint` | TypeScript and ESLint |
+| `npm run contrast` | Checks every text colour pair in `lib/tokens.ts` against WCAG AA |
+| `npm run verify:data` | Checks the price maths, label rules, sort order, fallback notices and "Why this plan" text for every plan, in English and Spanish, for home and business |
+| `npm run check` | All of the above, then a production build |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy to Vercel (to share a link)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Push this folder to GitHub.
+2. Open https://vercel.com/new and import the repository. If the repository contains other folders, set **Root Directory** to `assuredsaving-onepager-revamp`.
+3. Keep the defaults (Next.js). No environment variables are needed.
+4. Click **Deploy** and share the `https://<project>.vercel.app` link.
 
-## Learn More
+Or from a terminal: `npm i -g vercel`, then `vercel`, then `vercel --prod`.
 
-To learn more about Next.js, take a look at the following resources:
+## UX fixes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Problem in the current one-pager | Fix |
+| --- | --- |
+| The same plans appear in "Top picks" and again in "All bundles" | Top picks are ranks 1 to 3. "See all" lists only the rest. A carrier filter shows one list. Each plan appears once. |
+| Hand-written plan notes drift from the numbers ("$15/mo savings" next to "$14.98") | "Why this plan" is generated from each plan's own fields. A script checks every plan. |
+| Hard-coded BEST VALUE, PREMIUM and ALSO CONSIDER labels | Computed labels: **Most Affordable**, **Best Value** and **Fastest**, each on one plan at most, with the rules shown on the page. No "Premium" or "Most Popular" claims. |
+| Ranks shown out of order (#1, #3, #2) | Rank is the position in the all-in price sort. |
+| Headline price leaves out the Broadcast TV fee | The all-in monthly price (plan + required fees − promo) is big. The price after the promo is shown at the same size. The fee breakdown is in Details. |
+| "Save $X vs separate" shown without knowing your bill | Savings appear only after you enter your bill in "Compare with my bill". |
+| Fixed "96% Reliability" bar | Removed. Each plan has a plain technology note instead (fiber, cable, 5G, DSL, satellite lag and weather, data caps). |
+| Home wording on business addresses, and business-only usage tiles for everyone | Home and business each get their own usage tiles and plan wording. Static IP and support details show for business. |
+| "Call for pricing" with no explanation | A dedicated card explains why there's no price and offers "Get a quote". These plans are listed last and earn no labels. |
+| A requested bundle silently downgraded | A clear notice says what's missing and what is shown instead. |
+| Consent implied by a dense paragraph, and "8AM–9PM" doesn't match calling hours | The callback runs in steps: details, consent (AI-call box **unchecked**, optional SMS consent separate), phone verification (mocked), then call now or schedule. Times are limited to Mon to Sat, 9 AM to 8 PM in the chosen time zone. Errors are inline, and a do-not-call state offers a support route. |
+| Tiny, letter-spaced, low-contrast text | Light theme, bigger type, and AA-checked colours. |
+| A real person's name and email pre-filled | The fields start empty. |
+| Visitor has to know whether their address is home or business | Detected automatically from the typed address (`lib/address.ts`), shown as a label on the "Address found" card. Like the original one-pager, any typed street gets suggestions. |
+| Sponsored ad slot during the scan | Removed. |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Design system
 
-## Deploy on Vercel
+- **Tokens:** everything lives in `lib/tokens.ts`: colours (an electric-violet primary, plus blue, coral, violet, mint and sunny yellow, one per service), type scale, an 8px grid, radius, shadows and motion. `layout.tsx` writes them as CSS variables.
+- **Fonts:** Bricolage Grotesque for display and Inter for body, through next/font.
+- **Components:** in `components/ui`: Button, Input, Select, Checkbox, SegmentedControl, Badge, Chip, Slider, Skeleton, EmptyState, Modal, Drawer and Toast. PlanCard is in `components/sections`.
+- **Motion:** the hero uses CSS (tile pop, rise). The later sections load on demand with Framer Motion. All motion respects `prefers-reduced-motion`.
+- **ENG/ESP:** a dictionary toggle in `lib/i18n.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Demo tips
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Type any street. Suggestions are completed with sample cities, with no real lookup. The address type is detected from the address: words like Suite, Floor, Office, Plaza, Center, Commerce or Business make it a **business** address; anything else, including Apt and Unit, is **residential**. Try `500 Main St Suite 200` or `12 Oak St`. Choose **Internet + TV + Mobile** to see the "bundle not available" notice.
+
+In the callback:
+- Any 6-digit code verifies, and `000000` shows the wrong-code message.
+- A mobile number ending in `0000` shows the do-not-call message.
