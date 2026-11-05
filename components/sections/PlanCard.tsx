@@ -10,9 +10,9 @@ import { Sparkle } from "./Shell";
 /** Earned labels: flat colour, official wording. */
 export const LABEL_STYLE: Record<Label, { bg: string; fg: string; icon: typeof Tag; key: Key }> = {
   // Brand pills, never service colours (cyan means Internet, green means Security)
-  mostAffordable: { bg: "#FFF6C2", fg: "#1A1033", icon: Tag, key: "label_mostAffordable" },
-  bestValue: { bg: "#FFD60A", fg: "#1A1033", icon: Sparkles, key: "label_bestValue" },
-  fastest: { bg: "#B8124F", fg: "#FFFFFF", icon: Zap, key: "label_fastest" },
+  mostAffordable: { bg: "#FFEEDD", fg: "#0F1B3D", icon: Tag, key: "label_mostAffordable" },
+  bestValue: { bg: "#FF7A1A", fg: "#0F1B3D", icon: Sparkles, key: "label_bestValue" },
+  fastest: { bg: "#1D4ED8", fg: "#FFFFFF", icon: Zap, key: "label_fastest" },
 };
 
 /**
@@ -29,10 +29,10 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
   const promo = isPriced(plan) && plan.pricing.promo;
 
   return (
-    <article data-plan-card aria-labelledby={`p-${plan.id}`} className={clsx("relative overflow-hidden rounded-lg border bg-surface", featured ? "border-2 border-navy" : "border-line-strong")}>
+    <article data-plan-card aria-labelledby={`p-${plan.id}`} className={clsx("relative overflow-hidden rounded-lg border bg-surface", featured ? "border-2 border-ink" : "border-line-strong")}>
       {featured && (
-        <p className="caps flex items-center gap-2 bg-navy px-5 py-2 text-[12px] tracking-[0.16em] text-white sm:px-6">
-          <Sparkle className="size-3.5 text-primary" />
+        <p className="caps flex items-center gap-2 bg-ink px-5 py-2 text-[12px] tracking-[0.16em] text-white sm:px-6">
+          <Sparkle className="size-3.5 text-[#FFB800]" />
           {t("ourTopPick")}
         </p>
       )}

@@ -43,11 +43,11 @@ export function Wordmark({ compact, dark = true }: { compact?: boolean; dark?: b
     return (
       <span className={clsx("inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-3 ring-1 sm:gap-2.5 sm:px-3.5", dark ? "bg-navy2 ring-navy-line" : "bg-surface ring-line")}>
         <UsFlag className="h-3.5 w-auto shrink-0" />
-        <span className={clsx("caps text-[11px] tracking-[0.12em] max-[359px]:sr-only sm:text-[13px] sm:tracking-[0.18em]", dark ? "text-white" : "text-ink")}>{t("brand")}</span>
+        <span className={clsx("caps text-[11px] tracking-[0.12em] max-[359px]:sr-only sm:text-[13px] sm:tracking-[0.18em]", dark ? "text-on-dark" : "text-ink")}>{t("brand")}</span>
       </span>
     );
   return (
-    <span className={clsx("inline-flex items-baseline gap-1.5 text-xl leading-none tracking-[-0.02em]", dark ? "text-white" : "text-ink")}>
+    <span className={clsx("inline-flex items-baseline gap-1.5 text-xl leading-none tracking-[-0.02em]", dark ? "text-on-dark" : "text-ink")}>
       <span className="font-light" aria-hidden>Assured</span>
       <span className="font-black" aria-hidden>Saving</span>
       <span className="sr-only">{t("brand")}</span>
@@ -91,7 +91,7 @@ function LangSwitch() {
             lang={l}
             aria-pressed={s.lang === l}
             onClick={() => dispatch({ type: "patch", patch: { lang: l } })}
-            className={clsx("caps min-h-11 min-w-10 rounded-full px-1.5 text-[11px] tracking-[0.1em] transition-colors sm:min-w-11 sm:px-2 sm:text-[12px]", s.lang === l ? "text-accent" : "text-on-dark-muted hover:text-white")}
+            className={clsx("caps min-h-11 min-w-10 rounded-full px-1.5 text-[11px] tracking-[0.1em] transition-colors sm:min-w-11 sm:px-2 sm:text-[12px]", s.lang === l ? "text-accent" : "text-on-dark-muted hover:text-on-dark")}
           >
             {l === "en" ? "ENG" : "ESP"}
           </button>
@@ -108,13 +108,13 @@ export function Header() {
   const current = STAGE_NAMES[s.stage];
   const idx = Math.max(0, visible.indexOf(current));
   return (
-    <header className="on-dark sticky top-0 z-40 bg-navy text-white [@media(max-height:500px)]:static">
+    <header className="on-dark sticky top-0 z-40 border-b border-navy-line bg-surface text-on-dark [@media(max-height:500px)]:static">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         {s.stage > 0 ? (
           <button
             type="button"
             onClick={() => dispatch({ type: "back" })}
-            className="press -ml-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold text-white hover:bg-navy2"
+            className="press -ml-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold text-on-dark hover:bg-surface2"
           >
             <ArrowLeft aria-hidden className="size-4" />
             <span className="max-sm:sr-only">{t("back")}</span>
@@ -131,9 +131,9 @@ export function Header() {
         </div>
       </div>
       {/* Progress: one segment per step that applies */}
-      <div className="flex gap-0.5 bg-navy" aria-hidden>
+      <div className="flex gap-0.5 bg-surface" aria-hidden>
         {visible.map((n, i) => (
-          <span key={n} className={clsx("h-1 flex-1 transition-colors", i <= idx ? "bg-primary" : "bg-navy2")} />
+          <span key={n} className={clsx("h-1 flex-1 transition-colors", i <= idx ? "bg-primary" : "bg-line")} />
         ))}
       </div>
       <ContextBar />
@@ -147,23 +147,23 @@ function ContextBar() {
   const chosen = SERVICE_ORDER.filter((x) => s.services.includes(x));
   if (s.stage < 1 || !chosen.length) return null;
   const first = cleanText(s.name).split(" ")[0];
-  const item = "inline-flex shrink-0 items-center gap-1.5 text-sm text-white";
+  const item = "inline-flex shrink-0 items-center gap-1.5 text-sm text-on-dark";
   return (
-    <div className="border-t border-navy-line bg-navy2">
+    <div className="border-t border-navy-line bg-navy">
       <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-1.5 sm:px-6">
         {/* relative: screen-reader-only labels are absolutely positioned and must be clipped here too */}
         <ul className="relative flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
           {nameOk(s.name) && (
-            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-white max-xl:hidden">
+            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-on-dark max-xl:hidden">
               <User aria-hidden className="size-4 text-accent" />
               <span className="max-w-[9rem] truncate [overflow-wrap:normal]">{first}</span>
             </li>
           )}
           {s.address && (
-            <li className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-white">
+            <li className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-on-dark">
               <MapPin aria-hidden className="size-4 shrink-0 text-accent" />
               <span className="min-w-0 max-w-[16rem] truncate [overflow-wrap:normal]">{s.address.line1}</span>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-2 py-0.5 text-xs font-semibold text-on-dark-muted ring-1 ring-navy-line">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-on-dark-muted ring-1 ring-navy-line">
                 {s.address.type === "business" ? <Building2 aria-hidden className="size-3" /> : <Home aria-hidden className="size-3" />}
                 <span className="max-lg:sr-only">{t(s.address.type === "business" ? "businessAddress" : "homeAddress")}</span>
               </span>
@@ -186,7 +186,7 @@ function ContextBar() {
         <button
           type="button"
           onClick={() => dispatch({ type: "patch", patch: { modal: { kind: "callback", planId: null } } })}
-          className="hidden min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-accent hover:bg-navy md:inline-flex"
+          className="hidden min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-accent hover:bg-surface2 md:inline-flex"
         >
           <PhoneCall aria-hidden className="size-4" />
           {t("scheduleCallback")}
@@ -220,7 +220,7 @@ function StartOver() {
         >
           {t("startOverConfirm")}
         </button>
-        <button type="button" onClick={() => setAsking(false)} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-white hover:bg-navy">
+        <button type="button" onClick={() => setAsking(false)} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-on-dark hover:bg-surface2">
           {t("startOverCancel")}
         </button>
       </div>
@@ -229,7 +229,7 @@ function StartOver() {
     <button
       type="button"
       onClick={() => setAsking(true)}
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold text-on-dark-muted hover:bg-navy hover:text-white"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold text-on-dark-muted hover:bg-surface2 hover:text-on-dark"
     >
       <RotateCcw aria-hidden className="size-4" />
       <span className="max-sm:sr-only">{t("startOver")}</span>
@@ -250,11 +250,11 @@ export function Footer() {
           <nav aria-label={t("footerNav")} className="grid gap-8 sm:grid-cols-3">
             {FOOTER_LINKS.map((g) => (
               <div key={g.group}>
-                <h2 className="caps text-[12px] text-accent">{t(g.group)}</h2>
+                <h2 className="caps text-[12px] text-primary">{t(g.group)}</h2>
                 <ul className="mt-3 space-y-0.5">
                   {g.links.map((l) => (
                     <li key={l.slug}>
-                      <a href={siteUrl(l.slug, s.lang)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-white hover:text-accent">
+                      <a href={siteUrl(l.slug, s.lang)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-white hover:text-primary">
                         {t(l.key)}
                         <span className="sr-only"> {t("newTab")}</span>
                       </a>

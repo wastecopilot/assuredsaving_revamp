@@ -45,7 +45,7 @@ export function ScanSection() {
   return (
     <Section stage="scan" tone="navy">
       <div>
-        <h2 id="section-scan-h" tabIndex={-1} className="flex items-center gap-3 text-[1.875rem] font-black leading-tight tracking-[-0.03em] text-white outline-none sm:text-[2.375rem]">
+        <h2 id="section-scan-h" tabIndex={-1} className="flex items-center gap-3 text-[1.875rem] font-black leading-tight tracking-[-0.03em] text-on-dark outline-none sm:text-[2.375rem]">
           <Sparkle className="size-7 shrink-0 animate-pulse text-primary" />
           {t("agentLive")}
         </h2>
@@ -63,7 +63,7 @@ export function ScanSection() {
           {STATUS.map((k, i) => {
             const state = i < idx || pct >= 100 ? "done" : i === idx ? "now" : "wait";
             return (
-              <li key={k} className={clsx("flex items-center gap-3", state === "wait" ? "text-on-dark-muted" : "text-white")}>
+              <li key={k} className={clsx("flex items-center gap-3", state === "wait" ? "text-on-dark-muted" : "text-on-dark")}>
                 <span className={clsx("flex size-6 shrink-0 items-center justify-center rounded-full", state === "done" ? "bg-primary text-ink" : state === "now" ? "border-2 border-primary text-primary" : "border border-navy-line")}>
                   {state === "done" ? <Check aria-hidden className="size-3.5" strokeWidth={3} /> : state === "now" ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : null}
                 </span>
@@ -83,7 +83,7 @@ export function ScanSection() {
             <ul className="mt-3 divide-y divide-navy-line">
               {providers.map((p, i) => (
                 <li key={p} className="flex items-center justify-between gap-3 py-3 text-sm">
-                  <span className="font-black tracking-[-0.01em] text-white">{p}</span>
+                  <span className="font-black tracking-[-0.01em] text-on-dark">{p}</span>
                   {providerDone(i) ? (
                     <Check aria-hidden className="size-4 text-primary" strokeWidth={3} />
                   ) : (

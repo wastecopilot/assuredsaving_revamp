@@ -72,14 +72,14 @@ export function Hero() {
   };
 
   return (
-    <section id="section-intent" aria-labelledby="hero-h" className="on-dark scroll-mt-28 bg-navy text-white">
+    <section id="section-intent" aria-labelledby="hero-h" className="on-dark scroll-mt-28 bg-navy text-on-dark">
       <div className="mx-auto max-w-5xl px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-14">
-        {/* The brand type contrast: a light line, then a black line in sunflower with the sparkle */}
+        {/* The brand type contrast: a light line, then a black line in electric blue with the sparkle */}
         <h1 id="hero-h" tabIndex={-1} className="rise outline-none">
-          <span className="block text-[2.25rem] font-light leading-[1.05] tracking-[-0.03em] text-white sm:text-[3.75rem]">{internetHeadline ? t("heroTitle") : t("intentTitle1")}</span>{" "}
-          <span className="relative inline-flex items-start gap-2 text-[2.75rem] font-black leading-[1] tracking-[-0.045em] text-primary sm:text-[4.75rem]">
+          <span className="block text-[2.25rem] font-light leading-[1.05] tracking-[-0.03em] text-on-dark sm:text-[3.75rem]">{internetHeadline ? t("heroTitle") : t("intentTitle1")}</span>{" "}
+          <span className="relative inline-flex items-start gap-2 text-[2.75rem] font-black leading-[1] tracking-[-0.045em] text-link sm:text-[4.75rem]">
             {internetHeadline ? t("heroTitleHighlight") : t("intentTitle2")}
-            <Sparkle className="mt-1 size-7 shrink-0 text-accent sm:mt-2 sm:size-10" />
+            <Sparkle className="mt-1 size-7 shrink-0 text-[#FFB800] sm:mt-2 sm:size-10" />
           </span>
         </h1>
         <p className="rise mt-4 max-w-2xl sm:mt-6">
@@ -89,7 +89,7 @@ export function Hero() {
 
         {/* Services */}
         <div className="mt-8 sm:mt-12">
-          <h2 ref={servicesHead} className="caps text-[13px] tracking-[0.16em] text-white">
+          <h2 ref={servicesHead} className="caps text-[13px] tracking-[0.16em] text-on-dark">
             {t("serviceLabel")}
           </h2>
           <p className="mt-1 text-sm text-on-dark-muted max-sm:hidden">{t("multiSelectHint")}</p>
@@ -98,7 +98,7 @@ export function Hero() {
               <ServiceTile key={id} id={id} on={s.services.includes(id)} onToggle={() => toggle(id)} />
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {BUNDLE_PRESETS.map((b) => {
               const on = active?.id === b.id;
               return (
@@ -110,11 +110,11 @@ export function Hero() {
                     dispatch({ type: "setServices", s: b.services });
                     if (s.stage > STAGE.intent) collapse();
                   }}
-                  className={clsx("press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold ring-1", on ? "bg-white text-ink ring-white" : "text-white ring-navy-line hover:ring-on-dark-muted")}
+                  className={clsx("press inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full px-2.5 text-[13px] font-semibold ring-1 sm:justify-start sm:px-3.5 sm:text-sm", on ? "bg-ink text-white ring-ink" : "bg-surface text-on-dark ring-navy-line hover:ring-ink")}
                 >
-                  <span aria-hidden className="flex -space-x-1">
+                  <span aria-hidden className="hidden -space-x-1 sm:flex">
                     {b.services.map((x) => (
-                      <span key={x} className={clsx("size-3 rounded-full ring-2", on ? "ring-white" : "ring-navy")} style={{ background: service[x].vivid }} />
+                      <span key={x} className={clsx("size-3 rounded-full ring-2", on ? "ring-ink" : "ring-white")} style={{ background: service[x].vivid }} />
                     ))}
                   </span>
                   {t(`preset_${b.id.replaceAll("-", "_")}` as "preset_quad")}
@@ -151,7 +151,7 @@ export function Hero() {
               tabIndex={-1}
               role={panelPing ? "alert" : "group"}
               aria-label={t("businessOnlyTitle")}
-              className="mt-4 rounded-lg border-l-4 border-primary bg-navy2 p-4 text-white outline-none ring-1 ring-navy-line focus-visible:ring-2 focus-visible:ring-accent"
+              className="mt-4 rounded-lg border-l-4 border-primary bg-navy2 p-4 text-on-dark outline-none ring-1 ring-navy-line focus-visible:ring-2 focus-visible:ring-accent"
             >
               <p className="caps text-[13px] tracking-[0.14em] text-accent">{t("businessOnlyTitle")}</p>
               <p className="mt-1.5 text-sm text-on-dark-muted">{t("businessOnlyBody")}</p>
@@ -198,19 +198,19 @@ function ServiceTile({ id, on, onToggle }: { id: ServiceId; on: boolean; onToggl
       className={clsx(
         "press relative flex min-h-14 items-center gap-2.5 rounded-lg px-3 text-left ring-1 sm:min-h-[112px] sm:flex-col sm:items-start sm:justify-between sm:p-3.5",
         id === "security" && "max-sm:col-span-2",
-        !on && "bg-navy2 ring-navy-line hover:ring-on-dark-muted",
+        !on && "bg-surface ring-navy-line hover:ring-ink",
       )}
       style={on ? { background: c.vivid, color: c.on, boxShadow: `0 0 0 1px ${c.vivid}` } : undefined}
     >
       <span className="flex shrink-0 items-center justify-between gap-2 sm:w-full sm:items-start">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9" style={on ? { background: "#1A1033", color: c.vivid } : { background: c.vivid, color: c.on }}>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9" style={on ? { background: "#0F1B3D", color: c.vivid } : { background: c.vivid, color: c.on }}>
           <Icon aria-hidden className="size-[18px]" strokeWidth={2.25} />
         </span>
-        <span aria-hidden className={clsx("hidden size-5 items-center justify-center rounded-full sm:flex", on ? "bg-ink text-white" : "ring-1 ring-on-dark-muted")}>
+        <span aria-hidden className={clsx("hidden size-5 items-center justify-center rounded-full sm:flex", on ? "bg-ink text-white" : "ring-1 ring-line-strong")}>
           {on && <Check className="size-3.5" strokeWidth={3} />}
         </span>
       </span>
-      <span className={clsx("caps min-w-0 flex-1 text-[12px] tracking-[0.12em] [overflow-wrap:normal] sm:flex-none", on ? "text-ink" : "text-white")}>{t(`svc_${id}`)}</span>
+      <span className={clsx("caps min-w-0 flex-1 text-[12px] tracking-[0.12em] [overflow-wrap:normal] sm:flex-none", on ? "text-ink" : "text-on-dark")}>{t(`svc_${id}`)}</span>
       {on && <Check aria-hidden className="size-4 shrink-0 sm:hidden" strokeWidth={3} />}
     </button>
   );

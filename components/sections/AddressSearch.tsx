@@ -125,7 +125,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
             }}
             onFocus={() => setDismissed(false)}
             onKeyDown={onKey}
-            className={clsx(fieldClass, "min-h-14 rounded-full border-2 pl-12 text-[17px] focus:border-primary focus:ring-primary", noMatch || invalid ? "border-primary" : "border-transparent")}
+            className={clsx(fieldClass, "min-h-14 rounded-full border-2 pl-12 text-[17px] focus:border-primary focus:ring-primary", noMatch || invalid ? "border-primary" : "border-navy-line")}
           />
         </div>
         {action}
@@ -176,7 +176,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
               <Check aria-hidden className="size-4" strokeWidth={2.5} />
               {t("addressFound")}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-navy2 px-2.5 py-1 font-semibold text-white ring-1 ring-navy-line">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-navy2 px-2.5 py-1 font-semibold text-on-dark ring-1 ring-navy-line">
               {s.address.type === "business" ? <Building2 aria-hidden className="size-4" /> : <Home aria-hidden className="size-4" />}
               {t(s.address.type === "business" ? "businessAddress" : "homeAddress")}
             </span>
