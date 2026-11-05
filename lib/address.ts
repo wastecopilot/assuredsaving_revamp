@@ -18,7 +18,31 @@ const BUSINESS_HINTS =
   /\b(suite|ste\.?|floor|office|offices|plaza|center|centre|commerce|commercial|business|industrial|corporate|tower|mall|warehouse|depot|tech park|office park|business park)\b/i;
 
 export const hasBusinessHint = (text: string) => BUSINESS_HINTS.test(text);
-export const formatAddress = (a: SampleAddress) => `${a.line1}, ${a.city}, ${a.state} ${a.zip}`;
+export const formatAddress = (a: SampleAddress) => `${a.line1}, ${a.city}, ${a.state} ${a.zip}`.trim();
+
+/** US states by time zone (mock lookup for typed addresses; the majority zone per state). */
+const ZONES: Record<string, string[]> = {
+  "America/New_York": ["CT", "DC", "DE", "FL", "GA", "IN", "KY", "MA", "MD", "ME", "MI", "NC", "NH", "NJ", "NY", "OH", "PA", "RI", "SC", "VA", "VT", "WV"],
+  "America/Chicago": ["AL", "AR", "IA", "IL", "KS", "LA", "MN", "MO", "MS", "ND", "NE", "OK", "SD", "TN", "TX", "WI"],
+  "America/Denver": ["CO", "ID", "MT", "NM", "UT", "WY"],
+  "America/Phoenix": ["AZ"],
+  "America/Los_Angeles": ["CA", "NV", "OR", "WA"],
+  "America/Anchorage": ["AK"],
+  "Pacific/Honolulu": ["HI"],
+};
+const ZONE_OF = new Map(Object.entries(ZONES).flatMap(([z, states]) => states.map((s) => [s, z] as const)));
+
+/** "123 Main St, Dallas, TX 75201" -> the typed city, state and ZIP (null if no valid US state). */
+function typedLocality(cleaned: string): { city: string; state: string; zip: string } | null {
+  const parts = cleaned.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const tail = parts.slice(1).join(" ");
+  const m = /^(.*?)[\s,]+([A-Za-z]{2})(?:\s+(\d{5}))?$/.exec(tail);
+  if (!m) return null;
+  const state = m[2].toUpperCase();
+  if (!ZONE_OF.has(state) || !m[1].trim()) return null;
+  return { city: titleCase(m[1].trim().toLowerCase()).slice(0, 40), state, zip: m[3] ?? "" };
+}
 const titleCase = (s: string) => s.replace(/\b([a-z])/g, (m) => m.toUpperCase());
 
 export function getAddressSuggestions(query: string): SampleAddress[] {
@@ -35,6 +59,21 @@ export function getAddressSuggestions(query: string): SampleAddress[] {
   const typed = titleCase(cleaned.split(",")[0].replace(/\s+/g, " ").trim()).slice(0, 80);
   // Just a house number? Put it in front of the template street, like the original.
   const onlyNumber = /^\d+[A-Za-z]?$/.test(typed);
+
+  // A full address with city and state: suggest exactly what was typed.
+  const loc = onlyNumber ? null : typedLocality(cleaned);
+  if (loc) {
+    return [
+      {
+        id: `typed-${typed.toLowerCase()}-${loc.city.toLowerCase()}-${loc.state}`,
+        line1: typed,
+        ...loc,
+        timeZone: ZONE_OF.get(loc.state)!,
+        type: hasBusinessHint(typed) ? "business" : "residential",
+      },
+    ];
+  }
+
   const taken = new Set(base.map((a) => formatAddress(a).toLowerCase()));
   const built = ADDRESS_TEMPLATES.map((tpl, i): SampleAddress => {
     const line1 = onlyNumber ? `${typed} ${tpl.street}` : typed;
@@ -47,7 +86,10 @@ export function getAddressSuggestions(query: string): SampleAddress[] {
       timeZone: tpl.timeZone,
       type: hasBusinessHint(line1) ? "business" : tpl.type,
     };
-  }).filter((a) => !taken.has(formatAddress(a).toLowerCase()));
+  })
+    .filter((a) => !taken.has(formatAddress(a).toLowerCase()))
+    // Home addresses first for a plain street, so a quick tap doesn't land on a business address
+    .sort((a, b) => Number(a.type === "business") - Number(b.type === "business"));
 
   return [...base, ...built].slice(0, 5);
 }

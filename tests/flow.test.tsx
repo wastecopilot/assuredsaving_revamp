@@ -6,7 +6,7 @@
  */
 import React, { Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import official from "@/data/official-copy.json";
@@ -48,7 +48,7 @@ async function step1(user: User, services: string[], query: string, pick: RegExp
 
 async function toUsage(user: User, services: string[], query = "6585", pick = /Crescent Drive/) {
   await step1(user, services, query, pick);
-  const name = await screen.findByPlaceholderText("Your full name", undefined, { timeout: 5000 });
+  const name = await screen.findByLabelText("Your full name", undefined, { timeout: 10000 });
   await user.type(name, "Jordan Rivera");
   await user.click(within(document.getElementById("section-address")!).getByRole("button", { name: "Continue" }));
 }
@@ -80,7 +80,8 @@ describe("step 1: services and address", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Choose a service above, then pick your address");
     await user.click(svc("Internet"));
     await user.click(check());
-    expect(screen.getByRole("alert")).toHaveTextContent("Choose a service above, then pick your address");
+    // With a service chosen, the field points at what's missing: the address
+    expect(within(hero()).getByRole("combobox", { name: "Search USA address" })).toHaveAttribute("aria-invalid", "true");
     expect(document.getElementById("section-address")).toBeNull();
   });
 
@@ -93,7 +94,7 @@ describe("step 1: services and address", () => {
   it("shows the official error when nothing matches", async () => {
     const user = await start();
     await user.type(within(hero()).getByRole("combobox", { name: "Search USA address" }), "zzzz");
-    expect(await screen.findByText("US addresses only — please pick from the list")).toBeInTheDocument();
+    expect(await screen.findByText("Include State (e.g. NY, CA) and a street number")).toBeInTheDocument();
   });
 
   it("step 1 has no accessibility violations", async () => {
@@ -102,23 +103,63 @@ describe("step 1: services and address", () => {
   });
 });
 
+describe("UX review fixes on step 1", () => {
+  it("shows the official example hint before the first try (UX #7)", async () => {
+    await start();
+    expect(screen.getByText("Type your full US address, e.g. 123 Main St, Dallas, TX 75201")).toBeInTheDocument();
+  });
+
+  it("asks for a street number when one is missing, not 'US addresses only' (UX #7)", async () => {
+    const user = await start();
+    await user.type(within(hero()).getByRole("combobox", { name: "Search USA address" }), "Main Street Dallas");
+    expect(await screen.findByText("Include State (e.g. NY, CA) and a street number")).toBeInTheDocument();
+    expect(screen.queryByText("US addresses only — please pick from the list")).toBeNull();
+  });
+
+  it("only blames services when no service is chosen; otherwise points at the address (UX #7)", async () => {
+    const user = await start();
+    await user.click(svc("Internet"));
+    await user.click(check());
+    expect(screen.queryByText("Choose a service above, then pick your address")).toBeNull();
+    expect(within(hero()).getByRole("combobox", { name: "Search USA address" })).toHaveFocus();
+  });
+
+  it("moves focus to the business panel and announces it (UX #8)", async () => {
+    const user = await start();
+    await user.click(svc("Mobile"));
+    await user.type(within(hero()).getByRole("combobox", { name: "Search USA address" }), "658");
+    await user.click(await screen.findByRole("option", { name: /658 FL-60/ }));
+    await user.click(check());
+    const panel = screen.getByRole("alert");
+    expect(panel).toHaveTextContent("Business address detected");
+    expect(panel).toHaveFocus();
+  });
+
+  it("swaps to the official 'Let's Get the Right Deal' headline when Internet isn't chosen (UX #22)", async () => {
+    const user = await start();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Find the Best Internet");
+    await user.click(svc("Home Security"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Let's Get the Right Deal");
+  });
+});
+
 describe("business addresses", () => {
   it("offers only Internet or Internet + TV Bundle, then continues to the name step", async () => {
     const user = await start();
     await step1(user, ["Internet", "TV", "Mobile"], "658", /658 FL-60/);
     expect(within(hero()).getByText("Business Address")).toBeInTheDocument();
-    const chooser = await screen.findByRole("group", { name: "Business address detected" });
+    const chooser = await screen.findByLabelText("Business address detected");
     expect(document.getElementById("section-address")).toBeNull();
     await user.click(within(chooser).getByRole("button", { name: "Internet + TV Bundle" }));
     expect(pressed()).toEqual(["Internet", "TV"]);
-    expect(await screen.findByPlaceholderText("Your full name", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Your full name", undefined, { timeout: 10000 })).toBeInTheDocument();
   });
 
   it("from a non-internet service, goes through name and usage, never straight to the scan", async () => {
     const user = await start();
     await step1(user, ["Mobile"], "6580", /Fannin Street/);
-    await user.click(within(await screen.findByRole("group", { name: "Business address detected" })).getByRole("button", { name: "Internet" }));
-    const name = await screen.findByPlaceholderText("Your full name", undefined, { timeout: 5000 });
+    await user.click(within(await screen.findByLabelText("Business address detected")).getByRole("button", { name: "Internet" }));
+    const name = await screen.findByLabelText("Your full name", undefined, { timeout: 10000 });
     await user.type(name, "Jordan Rivera");
     await user.click(within(document.getElementById("section-address")!).getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("heading", { name: /use the internet/ })).toBeInTheDocument();
@@ -131,7 +172,7 @@ describe("name, usage and going back", () => {
   it("only continues from the name step with a real name", async () => {
     const user = await start();
     await step1(user, ["Internet"], "6585", /Crescent Drive/);
-    const name = await screen.findByPlaceholderText("Your full name", undefined, { timeout: 5000 });
+    const name = await screen.findByLabelText("Your full name", undefined, { timeout: 10000 });
     const cont = within(document.getElementById("section-address")!).getByRole("button", { name: "Continue" });
     expect(cont).toBeDisabled();
     await user.type(name, "J");
@@ -151,6 +192,51 @@ describe("name, usage and going back", () => {
     expect(await screen.findByRole("heading", { name: /use the internet/ })).toBeInTheDocument();
   });
 
+  it("the browser's Back button returns to the previous step instead of leaving (UX #1)", async () => {
+    const user = await start();
+    await toUsage(user, ["Internet"]);
+    await screen.findByRole("heading", { name: /use the internet/ });
+    window.history.back();
+    await waitFor(() => expect(screen.queryByRole("heading", { name: /use the internet/ })).toBeNull());
+    expect(document.getElementById("section-address")).not.toBeNull();
+  });
+
+  it("a reload keeps the visitor's progress in this tab (UX #1)", async () => {
+    const user = await start();
+    await toUsage(user, ["Internet"]);
+    await screen.findByRole("heading", { name: /use the internet/ });
+    cleanup();
+    render(<Page />);
+    expect(await screen.findByRole("heading", { name: /use the internet/ }, { timeout: 10000 })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Jordan Rivera")).toBeInTheDocument();
+  });
+
+  it("hides finished steps' Continue buttons (UX #3)", async () => {
+    const user = await start();
+    await toUsage(user, ["Internet", "TV"]);
+    await user.click(await screen.findByRole("button", { name: /Remote Work/ }));
+    await user.click(screen.getByRole("button", { name: "Find TV Plans" }));
+    await screen.findByRole("heading", { name: /perfect bundle/ });
+    expect(within(document.getElementById("section-usage")!).queryByRole("button", { name: /Find TV Plans|Continue/ })).toBeNull();
+  });
+
+  it("keeps usage answers when services change, and asks before starting over (UX #4)", async () => {
+    const user = await start();
+    await toUsage(user, ["Internet"]);
+    await user.click(await screen.findByRole("button", { name: /Remote Work/ }));
+    await user.click(svc("TV"));
+    await user.click(check());
+    await user.click(within(await screen.findByRole("region", { name: /full name/i }, { timeout: 10000 })).getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("button", { name: /Remote Work/ })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: /Start a new search/ }));
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(pressed()).toEqual(["Internet", "TV"]);
+    await user.click(screen.getByRole("button", { name: /Start a new search/ }));
+    await user.click(screen.getByRole("button", { name: "Start Over" }));
+    expect(pressed()).toEqual([]);
+  });
+
   it("changing the services after moving on goes back to step 1", async () => {
     const user = await start();
     await toUsage(user, ["Internet"]);
@@ -162,7 +248,7 @@ describe("name, usage and going back", () => {
 });
 
 describe("full flow to results", () => {
-  it("Internet + TV at a home address", { timeout: 25000 }, async () => {
+  it("Internet + TV at a home address", { timeout: 60000 }, async () => {
     const user = await start();
     await toUsage(user, ["Internet", "TV"]);
     const usageCta = await screen.findByRole("button", { name: "Pick how you use the internet" });

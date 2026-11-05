@@ -28,6 +28,19 @@ describe("address suggestions (mocked engine)", () => {
     expect(getAddressSuggestions("12 Main Street Suite 400").every((a) => a.type === "business")).toBe(true);
   });
 
+  it("honours a typed city, state and ZIP (the official hint format)", () => {
+    const r = getAddressSuggestions("123 Main St, Dallas, TX 75201");
+    expect(r[0]).toMatchObject({ line1: "123 Main St", city: "Dallas", state: "TX", zip: "75201", type: "residential" });
+    expect(r[0].timeZone).toBe("America/Chicago");
+    const noZip = getAddressSuggestions("9 Elm Ave, Denver, CO");
+    expect(noZip[0]).toMatchObject({ city: "Denver", state: "CO", timeZone: "America/Denver" });
+  });
+
+  it("puts home addresses before business ones for a plain street", () => {
+    const r = getAddressSuggestions("12 Oak Street");
+    expect(r[0].type).toBe("residential");
+  });
+
   it("never returns duplicates", () => {
     for (const q of ["6", "65", "658", "6585", "1", "12 Oak"]) {
       const ids = getAddressSuggestions(q).map(formatAddress);

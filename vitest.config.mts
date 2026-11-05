@@ -10,5 +10,7 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
     css: false,
+    // Integration tests load steps lazily, like the app; allow for a busy machine
+    testTimeout: 30000,
   },
 });

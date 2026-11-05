@@ -27,10 +27,11 @@ export function CallbackModal() {
   const plan = s.modal.planId ? PLANS.find((p) => p.id === s.modal.planId) : undefined;
   const close = () => dispatch({ type: "patch", patch: { modal: { kind: null, planId: s.modal.planId } } });
 
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState<Otp>("idle");
-  const [verifiedFor, setVerifiedFor] = useState<string | null>(null);
+  const [email, setEmailRaw] = useState(s.contact.email);
+  const [phone, setPhone] = useState(s.contact.phone);
+  const [verifiedFor, setVerifiedFor] = useState<string | null>(s.contact.verifiedFor);
+  const [otp, setOtp] = useState<Otp>(() => (s.contact.verifiedFor && s.contact.verifiedFor === nationalDigits(s.contact.phone) ? "verified" : "idle"));
+  const [booked, setBooked] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [tries, setTries] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -56,6 +57,26 @@ export function CallbackModal() {
   const cooldown = record ? Math.max(0, RESEND - Math.floor((now - record.at) / 1000)) : 0;
   const capped = !!record && record.count >= MAX_SENDS;
 
+  useEffect(() => {
+    dispatch({ type: "patch", patch: { contact: { email, phone, verifiedFor } } });
+  }, [dispatch, email, phone, verifiedFor]);
+
+  const canCallNow = inCallingHours(new Date(now), zone);
+
+  /** Fixing a field clears its error straight away. */
+  const setEmail = (v: string) => {
+    setEmailRaw(v);
+    if (err.email && emailOk(v)) setErr((e) => ({ ...e, email: undefined }));
+  };
+  const setConsent = (v: boolean) => {
+    setCall(v);
+    if (v) setErr((e) => ({ ...e, consent: undefined }));
+  };
+  const focusFirst = (next: Partial<Record<"email" | "phone" | "code" | "consent" | "form", string>>) => {
+    const id = next.email ? "cb-email" : next.phone ? "cb-phone" : next.form && otp !== "verified" ? "cb-phone" : next.consent ? "cb-call" : next.form ? "cb-time" : null;
+    if (id) window.setTimeout(() => document.getElementById(id)?.focus(), 10);
+  };
+
   // Clock for the resend countdown and for keeping time slots current
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -66,6 +87,7 @@ export function CallbackModal() {
     req.current++; // cancels any pending send or verify
     setPhone(formatPhone(v));
     setOtp("idle");
+    setErr((e) => ({ ...e, phone: undefined, code: undefined }));
     setCode("");
     setTries(0);
     if (verifiedFor) {
@@ -109,6 +131,9 @@ export function CallbackModal() {
       if (req.current !== id || phoneNow.current !== forPhone) return;
       setVerifiedFor(forPhone);
       setOtp("verified");
+      setErr((e) => ({ ...e, form: undefined }));
+      // Next required item
+      window.setTimeout(() => document.getElementById("cb-call")?.focus(), 10);
     }, 500);
   };
 
@@ -121,17 +146,26 @@ export function CallbackModal() {
     else if (otp !== "verified" || verifiedFor !== phoneNow.current) next.form = t("cbVerifyRequired");
     if (!call) next.consent = t(mode === "now" ? "cbConsentErrNow" : "cbConsentErrSchedule");
     if (mode === "now" && !inCallingHours(at, zone)) next.form = t("cbCompleteFirst");
+    let slotLabel: string | null = null;
     if (mode === "later") {
       const fresh = callingDays(at, zone, lang).find((d) => d.key === (chosenDay?.key ?? ""));
-      if (!slot || !fresh?.slots.some((x) => x.key === slot)) next.form = t("cbCompleteFirst");
+      const found = fresh?.slots.find((x) => x.key === slot);
+      if (!slot || !found) next.form = next.form ?? t("cbCompleteFirst");
+      else slotLabel = `${fresh!.label} · ${found.label}`;
     }
     setErr(next);
-    if (Object.keys(next).length) return;
+    if (Object.keys(next).length) return focusFirst(next);
+    setBooked(slotLabel);
     setDone(true);
   };
 
-  const link = "font-semibold text-primary underline underline-offset-2";
-  const tzOptions = TIME_ZONES.map((z) => ({ value: z.id, label: new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { timeZone: z.id, timeZoneName: "long" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value ?? z.id }));
+  const link = "font-semibold text-link underline underline-offset-2";
+  // The browser's own zone name, plus the city, so Denver and Phoenix never read the same
+  const tzOptions = TIME_ZONES.map((z) => {
+    const name = new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { timeZone: z.id, timeZoneName: "long" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value ?? z.id;
+    const city = z.id.split("/").pop()!.replace(/_/g, " ");
+    return { value: z.id, label: `${name.charAt(0).toUpperCase()}${name.slice(1)} (${city})` };
+  });
 
   return (
     <Modal
@@ -147,11 +181,15 @@ export function CallbackModal() {
           </Button>
         ) : (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button size="lg" className="sm:flex-1" iconLeft={<PhoneCall aria-hidden className="size-5" />} onClick={() => submit("now")}>
-              {t("cbCallNow")}
-            </Button>
-            <span className="text-center text-sm text-muted">{t("cbOrSchedule")}</span>
-            <Button size="lg" variant="secondary" className="sm:flex-1" iconLeft={<CalendarClock aria-hidden className="size-5" />} onClick={() => submit("later")}>
+            {canCallNow && (
+              <>
+                <Button size="lg" className="sm:flex-1" iconLeft={<PhoneCall aria-hidden className="size-5" />} onClick={() => submit("now")}>
+                  {t("cbCallNow")}
+                </Button>
+                <span className="text-center text-sm text-muted">{t("cbOrSchedule")}</span>
+              </>
+            )}
+            <Button size="lg" variant={canCallNow ? "secondary" : "primary"} className="sm:flex-1" iconLeft={<CalendarClock aria-hidden className="size-5" />} onClick={() => submit("later")}>
               {t("cbSchedule")}
             </Button>
           </div>
@@ -161,17 +199,25 @@ export function CallbackModal() {
       {done ? (
         <div className="flex flex-col items-center py-4 text-center">
           <CircleCheck aria-hidden className="size-12 text-success" />
+          {booked && (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-md bg-surface2 px-3 py-2 text-base font-semibold text-ink">
+              <CalendarClock aria-hidden className="size-5" />
+              {booked}
+            </p>
+          )}
           {plan && <p className="mt-3 text-base text-ink">{t("cbDoneDesc", { provider: plan.provider })}</p>}
           <p className="mt-3 text-sm text-muted">{t("cbAria")}</p>
         </div>
       ) : (
         <div className="space-y-5">
-          <p className="flex gap-2.5 rounded-md border border-line bg-surface2 p-3 text-sm text-ink">
-            <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-            {t("cbAria")}
-          </p>
+          {!plan && (
+            <p className="flex gap-2.5 rounded-md border border-line bg-surface2 p-3 text-sm text-ink">
+              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-primary-strong" />
+              {t("cbAria")}
+            </p>
+          )}
 
-          <Input id="cb-email" label={t("cbEmail")} type="email" inputMode="email" autoComplete="email" spellCheck={false} maxLength={120} value={email} onChange={(e) => setEmail(e.target.value)} error={err.email} />
+          <Input id="cb-email" data-autofocus label={t("cbEmail")} type="email" inputMode="email" autoComplete="email" spellCheck={false} maxLength={120} value={email} onChange={(e) => setEmail(e.target.value)} error={err.email} />
 
           <div>
             <Input
@@ -190,7 +236,7 @@ export function CallbackModal() {
                 otp === "verified" ? (
                   <span className="text-sm font-semibold text-success">{t("cbVerified")}</span>
                 ) : otp === "idle" || otp === "sending" ? (
-                  <Button variant="soft" className="min-h-9 px-3" disabled={otp === "sending" || digits(phone).length < 10 || cooldown > 0 || capped} onClick={sendCode}>
+                  <Button variant="soft" className="min-h-9 px-3" disabled={otp === "sending" || cooldown > 0 || capped} onClick={sendCode}>
                     {otp === "sending" ? t("cbSending") : cooldown > 0 ? t("cbResendIn", { sec: cooldown }) : t("cbSendCode")}
                   </Button>
                 ) : null
@@ -240,7 +286,7 @@ export function CallbackModal() {
             )}
           </div>
 
-          <Checkbox id="cb-call" checked={call} onChange={setCall} error={err.consent}>
+          <Checkbox id="cb-call" checked={call} onChange={setConsent} error={err.consent}>
             {t("cbConsentCall")}
           </Checkbox>
           <Checkbox id="cb-sms" checked={sms} onChange={setSms}>
@@ -252,7 +298,7 @@ export function CallbackModal() {
             <fieldset className="sm:col-span-2">
               <legend className="mb-1.5 text-sm font-medium text-ink">{t("cbPreferredTime")}</legend>
               <div className="grid gap-3 sm:grid-cols-2">
-                <select aria-label={t("cbPreferredTime")} value={chosenDay?.key ?? ""} onChange={(e) => { setDay(e.target.value); setSlot(""); }} className="min-h-12 rounded-md border border-line-strong bg-surface px-3.5 text-base text-ink">
+                <select id="cb-time" aria-label={t("cbPreferredTime")} value={chosenDay?.key ?? ""} onChange={(e) => { setDay(e.target.value); setSlot(""); }} className="min-h-12 rounded-md border border-line-strong bg-surface px-3.5 text-base text-ink">
                   {days.map((d) => (
                     <option key={d.key} value={d.key}>
                       {d.label}

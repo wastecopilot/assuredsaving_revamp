@@ -1,7 +1,7 @@
 "use client";
 import { ArrowRight, Check, PhoneCall } from "lucide-react";
 import { PLANS } from "@/data/sample";
-import { allInAfter, allInNow, bestFor, isPriced, money, planReasons, resultsFor, speedText, techLabel } from "@/lib/plans";
+import { allInAfter, allInNow, bestFor, displayOrder, isPriced, labelsFor, money, planReasons, resultsFor, speedText, techLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import { Button } from "../ui";
 import { Drawer } from "../ui/Overlay";
@@ -12,7 +12,8 @@ export function DetailsDrawer() {
   const plan = s.modal.kind === "details" ? (PLANS.find((p) => p.id === s.modal.planId) ?? null) : null;
   const close = () => dispatch({ type: "patch", patch: { modal: { kind: null, planId: s.modal.planId } } });
   const lang = s.lang;
-  const top = resultsFor(s.services).plans[0];
+  const found = resultsFor(s.services).plans;
+  const top = displayOrder(found, labelsFor(found), { usage: s.usage, devices: s.devices })[0];
   const biz = s.addressType === "business";
 
   const rows: [string, string | null][] = plan
@@ -96,20 +97,19 @@ export function DetailsDrawer() {
             </section>
           )}
 
-          {planReasons(plan, top, lang).length > 0 && (
+          {planReasons(plan, top, lang, s.addressType).length > 0 && (
             <section aria-labelledby="d-why">
               <h3 id="d-why" className="font-bold text-ink">
                 {t("whyThisPlan")}
               </h3>
               <ul className="mt-2 space-y-1.5 text-sm text-muted">
-                {planReasons(plan, top, lang).map((r) => (
+                {planReasons(plan, top, lang, s.addressType).map((r) => (
                   <li key={r}>{r}</li>
                 ))}
               </ul>
             </section>
           )}
 
-          <p className="text-xs leading-relaxed text-muted">{t("priceFooter")}</p>
         </div>
       )}
     </Drawer>

@@ -6,7 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { DEVICES, type AddressType, type SampleAddress, type ServiceId } from "@/data/catalog";
 import { translate, type Key, type Lang } from "./i18n";
-import { toggleService } from "./selection";
+import { isValidSelection, toggleService } from "./selection";
 
 export const STAGE = { intent: 0, address: 1, usage: 2, tv: 3, scan: 4, results: 5 } as const;
 export type StageName = keyof typeof STAGE;
@@ -33,6 +33,8 @@ export interface State {
   modal: { kind: "details" | "callback" | null; planId: string | null };
   /** Filled by the results section for the "Your quote" summary. */
   resultsSummary: { count: number; fromCents: number | null } | null;
+  /** Callback details kept for the visit, so closing the form doesn't lose them. */
+  contact: { email: string; phone: string; verifiedFor: string | null };
 }
 
 export const initial: State = {
@@ -54,6 +56,7 @@ export const initial: State = {
   billCents: null,
   modal: { kind: null, planId: null },
   resultsSummary: null,
+  contact: { email: "", phone: "", verifiedFor: null },
 };
 
 export type Action =
@@ -62,6 +65,7 @@ export type Action =
   | { type: "setServices"; s: ServiceId[] }
   | { type: "advance"; to: number }
   | { type: "back" }
+  | { type: "goto"; to: number }
   | { type: "reset" };
 
 /** Usage applies only when internet is part of the request; TV setup only with TV. */
@@ -96,6 +100,13 @@ export function reducer(s: State, a: Action): State {
       // Leaving results or scan re-runs the scan next time.
       return { ...s, stage: t, scanDone: t >= STAGE.results ? s.scanDone : false };
     }
+    case "goto": {
+      // Browser Back: return to an earlier step (never forward), skipping steps that don't apply.
+      if (s.modal.kind) return { ...s, modal: { ...s.modal, kind: null } };
+      let t = Math.max(0, Math.min(a.to, s.stage));
+      while (t > 0 && !applies(s, t)) t--;
+      return t === s.stage ? s : { ...s, stage: t, scanDone: t >= STAGE.results ? s.scanDone : false };
+    }
     case "reset":
       return { ...initial, lang: s.lang };
   }
@@ -115,6 +126,15 @@ export const useStore = () => {
   if (!c) throw new Error("useStore outside provider");
   return c;
 };
+
+const SAVE_KEY = "as-onepager-v1";
+const SAVED_FIELDS = ["lang", "stage", "services", "name", "address", "addressType", "usage", "devices", "genres", "intl", "tvs", "smartTvs", "hasInternet", "scanDone", "carrier", "contact"] as const;
+/** What survives a reload in this tab (sessionStorage only; cleared when the tab closes). */
+function pickSaved(s: Partial<State>): Partial<State> {
+  const out: Record<string, unknown> = {};
+  for (const k of SAVED_FIELDS) if (s[k] !== undefined) out[k] = s[k];
+  return out as Partial<State>;
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [s, dispatch] = useReducer(reducer, initial);
@@ -171,6 +191,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = s.lang;
   }, [s.lang]);
+
+  /*
+   * Browser Back / phone back gesture: each step forward (and an open dialog) adds a
+   * history entry, so Back returns to the previous step instead of leaving the site.
+   */
+  const lastStage = useRef(s.stage);
+  useEffect(() => {
+    if (s.stage > lastStage.current) window.history.pushState({ asStage: s.stage }, "");
+    lastStage.current = s.stage;
+  }, [s.stage]);
+  const modalOpen = !!s.modal.kind;
+  useEffect(() => {
+    if (modalOpen) window.history.pushState({ asStage: ref.current.stage, asModal: true }, "");
+  }, [modalOpen]);
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const cur = ref.current;
+      if (cur.modal.kind) return dispatch({ type: "patch", patch: { modal: { ...cur.modal, kind: null } } });
+      const to = typeof e.state?.asStage === "number" ? e.state.asStage : 0;
+      if (to < cur.stage) {
+        lastStage.current = Math.min(lastStage.current, to);
+        dispatch({ type: "goto", to });
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  /* Keep progress for this browser tab, so a reload doesn't lose it. Never the callback code. */
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    try {
+      const raw = window.sessionStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<State>;
+      if (saved && typeof saved === "object" && Array.isArray(saved.services) && isValidSelection(saved.services)) {
+        dispatch({ type: "patch", patch: { ...pickSaved(saved), modal: { kind: null, planId: null } } });
+        if ((saved.stage ?? 0) > 0) pending.current = STAGE_NAMES[Math.min(saved.stage ?? 0, STAGE.results)];
+      }
+    } catch {
+      /* storage unavailable or corrupt: start fresh */
+    }
+  }, []);
+  useEffect(() => {
+    if (!restored.current) return;
+    try {
+      window.sessionStorage.setItem(SAVE_KEY, JSON.stringify(pickSaved(s)));
+    } catch {
+      /* storage unavailable: nothing to do */
+    }
+  }, [s]);
 
   const t = useCallback((k: Key, vars?: Record<string, string | number>) => translate(s.lang, k, vars), [s.lang]);
   const value = useMemo(() => ({ s, dispatch, t, goNext, scrollTo }), [s, t, goNext, scrollTo]);

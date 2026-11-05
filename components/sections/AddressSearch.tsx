@@ -1,35 +1,52 @@
 "use client";
 /**
  * "Search USA address" with suggestions (mocked engine, lib/address.ts).
- * Keyboard: arrows move, Enter picks, Escape closes. Picking a suggestion verifies it
+ * Keyboard: arrows move (ArrowDown also reopens), Enter picks, Escape closes, and
+ * Enter on a verified address runs the main action. Picking verifies the address
  * and detects home or business. Editing a verified address clears it.
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { Building2, Check, Home, MapPin, Search } from "lucide-react";
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent } from "react";
+import { Building2, Check, Home, Search } from "lucide-react";
 import clsx from "clsx";
 import type { SampleAddress } from "@/data/catalog";
 import { formatAddress as fmt, getAddressSuggestions } from "@/lib/address";
 import { useStore } from "@/lib/store";
 import { fieldClass } from "../ui";
 
-export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose: (a: SampleAddress) => void; onClear: () => void; action?: React.ReactNode; invalid?: boolean }) {
+export interface AddressSearchHandle {
+  focus: () => void;
+}
+
+export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: SampleAddress) => void; onClear: () => void; onSubmit?: () => void; action?: React.ReactNode; invalid?: boolean }>(function AddressSearch(
+  { onChoose, onClear, onSubmit, action, invalid },
+  handle,
+) {
   const { s, t } = useStore();
   const [q, setQ] = useState(s.address ? fmt(s.address) : "");
   const [dismissed, setDismissed] = useState(false);
   const [active, setActive] = useState(-1);
   const listId = useId();
   const wrap = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  useImperativeHandle(handle, () => ({ focus: () => input.current?.focus() }), []);
 
-  const lastChosen = useRef("");
-  // "Start a new search" clears the store: clear the field too (but not while the visitor is editing)
+  const lastChosen = useRef(s.address ? fmt(s.address) : "");
+  // A restored session or "Start a new search" changes the store: keep the field in step
   useEffect(() => {
-    if (!s.address && q && q === lastChosen.current) setQ("");
+    if (s.address && !q) {
+      const v = fmt(s.address);
+      lastChosen.current = v;
+      setQ(v);
+    } else if (!s.address && q && q === lastChosen.current) setQ("");
   }, [s.address, q]);
 
   const verified = !!s.address && fmt(s.address) === q;
   const matches = verified ? [] : getAddressSuggestions(q);
   const open = q.trim().length > 0 && !dismissed && matches.length > 0;
   const noMatch = q.trim().length > 0 && !verified && matches.length === 0;
+  // The official error for the actual problem: no street number vs. not a US address
+  const noMatchMsg = /^\s*\d/.test(q) ? t("usError") : t("manualError");
+  const describedBy = noMatch || invalid ? "addr-msg" : "addr-hint";
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => wrap.current && !wrap.current.contains(e.target as Node) && setDismissed(true);
@@ -46,7 +63,19 @@ export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose
     onChoose(a);
   };
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!open) return;
+    if (e.key === "Enter" && verified && onSubmit) {
+      e.preventDefault();
+      onSubmit();
+      return;
+    }
+    if (!open) {
+      if (e.key === "ArrowDown" && matches.length) {
+        e.preventDefault();
+        setDismissed(false);
+        setActive(0);
+      }
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActive((i) => (i + 1) % matches.length);
@@ -60,9 +89,10 @@ export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose
   };
   const tryAgain = () => {
     setQ("");
+    lastChosen.current = "";
     setDismissed(false);
     onClear();
-    window.setTimeout(() => document.getElementById("addr")?.focus(), 20);
+    window.setTimeout(() => input.current?.focus(), 20);
   };
 
   return (
@@ -71,6 +101,7 @@ export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose
         <div className="relative flex-1">
           <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted" />
           <input
+            ref={input}
             id="addr"
             role="combobox"
             aria-label={t("addrSearchLabel")}
@@ -79,7 +110,7 @@ export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose
             aria-autocomplete="list"
             aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
             aria-invalid={noMatch || invalid || undefined}
-            aria-describedby={noMatch ? "addr-err" : undefined}
+            aria-describedby={verified ? "addr-found" : describedBy}
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -100,51 +131,62 @@ export function AddressSearch({ onChoose, onClear, action, invalid }: { onChoose
         {action}
       </div>
 
-      <ul id={listId} role="listbox" aria-label={t("addrSearchLabel")} hidden={!open} className="absolute inset-x-0 top-full z-30 mt-1 max-h-80 overflow-auto rounded-md border border-ink bg-surface py-1 shadow-lg">
-        {matches.map((a, i) => (
-          <li
-            key={a.id}
-            id={`${listId}-${i}`}
-            role="option"
-            aria-selected={i === active}
-            onMouseDown={(e) => e.preventDefault()}
-            onMouseMove={() => active !== i && setActive(i)}
-            onClick={() => choose(a)}
-            className={clsx("flex min-h-12 cursor-pointer items-center gap-3 px-4 py-2", i === active && "bg-primary-soft")}
-          >
-            <MapPin aria-hidden className="size-4 shrink-0 text-muted" />
-            <span className="min-w-0 flex-1 text-[15px]">
-              <span className="font-semibold text-ink">{a.line1}</span>
-              <span className="text-muted">
-                , {a.city}, {a.state} {a.zip}
+      <ul id={listId} role="listbox" aria-label={t("addrSearchLabel")} hidden={!open} className="absolute inset-x-0 top-[3.75rem] z-30 max-h-80 overflow-auto rounded-md border border-ink bg-surface py-1 shadow-lg">
+        {matches.map((a, i) => {
+          const Icon = a.type === "business" ? Building2 : Home;
+          return (
+            <li
+              key={a.id}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={i === active}
+              onMouseDown={(e) => e.preventDefault()}
+              onMouseMove={() => active !== i && setActive(i)}
+              onClick={() => choose(a)}
+              className={clsx("flex min-h-12 cursor-pointer items-center gap-3 px-4 py-2", i === active && "bg-primary-soft")}
+            >
+              <Icon aria-hidden className="size-4 shrink-0 text-muted" />
+              <span className="min-w-0 flex-1 text-[15px]">
+                <span className="font-semibold text-ink">{a.line1}</span>
+                <span className="text-muted">
+                  , {a.city}, {a.state} {a.zip}
+                </span>
               </span>
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
-      {noMatch && (
-        <p id="addr-err" role="status" className="mt-2 text-sm font-medium text-danger">
-          {t("usError")}
-        </p>
-      )}
+      {!verified &&
+        (noMatch || invalid ? (
+          <p id="addr-msg" className="mt-2 text-sm font-medium text-danger">
+            {noMatch ? noMatchMsg : t("manualHint")}
+          </p>
+        ) : (
+          <p id="addr-hint" className="mt-2 text-sm text-muted">
+            {t("manualHint")}
+          </p>
+        ))}
 
-      {s.address && verified && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" aria-live="polite">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-success">
-            <Check aria-hidden className="size-4" strokeWidth={2.5} />
-            {t("addressFound")}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-ink">
-            {s.address.type === "business" ? <Building2 aria-hidden className="size-4" /> : <Home aria-hidden className="size-4" />}
-            {t(s.address.type === "business" ? "businessAddress" : "homeAddress")}
-          </span>
-          <button type="button" onClick={tryAgain} className="inline-flex min-h-11 items-center font-semibold text-link underline underline-offset-4">
-            <span aria-hidden>←&nbsp;</span>
-            {t("tryDifferentAddress")}
-          </button>
-        </div>
-      )}
+      {/* Always present, so screen readers announce "Address Found" and the type when they appear */}
+      <div aria-live="polite" id="addr-found">
+        {s.address && verified && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-success">
+              <Check aria-hidden className="size-4" strokeWidth={2.5} />
+              {t("addressFound")}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-ink">
+              {s.address.type === "business" ? <Building2 aria-hidden className="size-4" /> : <Home aria-hidden className="size-4" />}
+              {t(s.address.type === "business" ? "businessAddress" : "homeAddress")}
+            </span>
+            <button type="button" onClick={tryAgain} className="inline-flex min-h-11 items-center font-semibold text-link underline underline-offset-4">
+              <span aria-hidden>←&nbsp;</span>
+              {t("tryDifferentAddress")}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+});

@@ -23,16 +23,16 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
   const lang = s.lang;
   const speed = speedText(plan, lang);
   const open = (kind: "details" | "callback") => dispatch({ type: "patch", patch: { modal: { kind, planId: plan.id } } });
-  const reasons = planReasons(plan, top, lang);
+  const reasons = planReasons(plan, top, lang, s.addressType);
   const biz = s.addressType === "business";
   const promo = isPriced(plan) && plan.pricing.promo;
 
   return (
     <article data-plan-card aria-labelledby={`p-${plan.id}`} className={clsx("relative rounded-md border bg-surface", featured ? "border-ink" : "border-line-strong")}>
       {featured && <span aria-hidden className="absolute inset-y-0 left-0 w-1.5 rounded-l-md bg-primary" />}
-      <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-start md:gap-6">
+      <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(max-content,0.9fr)_auto] lg:items-start lg:gap-x-6 lg:gap-y-3">
         {/* Who and what */}
-        <div className="min-w-0">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <p className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-semibold text-muted tabular">#{rank}</span>
             {featured && <span className="font-semibold text-ink">{t("ourTopPick")}</span>}
@@ -46,42 +46,15 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
               );
             })}
           </p>
-          <p className="mt-2 text-xl font-bold text-ink">{plan.provider}</p>
-          <h3 id={`p-${plan.id}`} className="text-sm text-muted">
-            {plan.name}
+          {/* Provider and plan together, so heading navigation makes sense */}
+          <h3 id={`p-${plan.id}`} className="mt-2">
+            <span className="block text-xl font-bold text-ink">{plan.provider}</span>
+            <span className="block text-sm font-normal text-muted">{plan.name}</span>
           </h3>
-          {reasons.length > 0 && (
-            <ul className="mt-3 space-y-1 text-sm">
-              {reasons.slice(0, 2).map((r) => (
-                <li key={r} className="flex gap-2 text-muted">
-                  <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-success" />
-                  {r}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
 
-        {/* Facts */}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm md:grid-cols-1">
-          <div>
-            <dt className="text-muted">{t("technology")}</dt>
-            <dd className="font-semibold text-ink">{techLabel(plan, lang)}</dd>
-          </div>
-          {speed && (
-            <div>
-              <dt className="text-muted">{t("downloadSpeed")}</dt>
-              <dd className="font-semibold text-ink tabular">{speed}</dd>
-            </div>
-          )}
-          <div>
-            <dt className="text-muted">{t("contractTerm")}</dt>
-            <dd className="font-semibold text-ink">{plan.contractMonths ? t("contractMonths", { n: plan.contractMonths }) : t("noContract")}</dd>
-          </div>
-        </dl>
-
         {/* Price */}
-        <div className="md:text-right">
+        <div className="lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:text-right">
           {isPriced(plan) ? (
             <>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted">{t("monthly")}</p>
@@ -101,8 +74,37 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
           )}
         </div>
 
+        {/* Facts */}
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:grid-cols-1">
+          <div>
+            <dt className="text-muted">{t("technology")}</dt>
+            <dd className="font-semibold text-ink">{techLabel(plan, lang)}</dd>
+          </div>
+          {speed && (
+            <div>
+              <dt className="text-muted">{t("downloadSpeed")}</dt>
+              <dd className="font-semibold text-ink tabular">{speed}</dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-muted">{t("contractTerm")}</dt>
+            <dd className="font-semibold text-ink">{plan.contractMonths ? t("contractMonths", { n: plan.contractMonths }) : t("noContract")}</dd>
+          </div>
+        </dl>
+
+        {reasons.length > 0 && (
+          <ul className="space-y-1 text-sm lg:col-start-1 lg:row-start-2">
+            {reasons.slice(0, 2).map((r, i) => (
+              <li key={r} className={clsx("flex gap-2 text-muted", i > 0 && "max-sm:hidden")}>
+                <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-success" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        )}
+
         {/* Actions */}
-        <div className="flex flex-col gap-2 sm:flex-row md:w-44 md:flex-col">
+        <div className="flex flex-col gap-2 sm:flex-row lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:w-44 lg:flex-col">
           <button
             type="button"
             onClick={() => open("callback")}

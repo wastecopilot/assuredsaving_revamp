@@ -46,8 +46,8 @@ describe("Input", () => {
     render(<Input label="Email Address" error="Enter a valid email address" />);
     const box = screen.getByLabelText("Email Address");
     expect(box).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid email address");
-    expect(box.getAttribute("aria-describedby")).toBeTruthy();
+    // Linked to the field (read when focused), not a separate alert per field
+    expect(box).toHaveAccessibleDescription("Enter a valid email address");
   });
 });
 

@@ -34,10 +34,9 @@ export function inCallingHours(now: Date, tz: string) {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const label = (mins: number) => {
-  const h = Math.floor(mins / 60);
-  return `${((h + 11) % 12) + 1}:${pad(mins % 60)} ${h < 12 ? "AM" : "PM"}`;
-};
+/** A start time in the visitor's language (e.g. "8:30 AM" / "8:30 a.m."). */
+const label = (mins: number, lang: Lang = "en") =>
+  new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 0, 1, Math.floor(mins / 60), mins % 60)));
 
 export interface Day {
   key: string;
@@ -57,7 +56,7 @@ export function callingDays(now: Date, tz: string, lang: Lang, count = 6): Day[]
     const slots: Day["slots"] = [];
     for (let m = START; m < END; m += STEP) {
       if (i === 0 && m < z.mins + 15) continue; // 15-minute lead time today
-      slots.push({ key: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, label: label(m) });
+      slots.push({ key: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, label: label(m, lang) });
     }
     if (!slots.length) continue;
     days.push({

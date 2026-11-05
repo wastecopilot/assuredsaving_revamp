@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, RotateCcw, ShieldCheck, Tv } from "lucide-react";
 import clsx from "clsx";
 import { DIRECTV_TIERS } from "@/data/sample";
 import type { ServiceId } from "@/data/catalog";
 import type { Key } from "@/lib/i18n";
-import { allInNow, isPriced, labelsFor, money, resultsFor } from "@/lib/plans";
+import { allInNow, displayOrder, isPriced, labelsFor, money, resultsFor } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import { Button, Chip, EmptyState } from "../ui";
 import { PlanCard } from "./PlanCard";
@@ -23,13 +23,17 @@ export function verticalKey(services: ServiceId[]): Key {
 
 export function ResultsSection() {
   const { s, dispatch, t } = useStore();
-  const { plans, missing } = useMemo(() => resultsFor(s.services), [s.services]);
-  const labels = useMemo(() => labelsFor(plans), [plans]);
+  const found = useMemo(() => resultsFor(s.services), [s.services]);
+  const missing = found.missing;
+  const labels = useMemo(() => labelsFor(found.plans), [found.plans]);
+  // The visitor's answers decide the top pick; labelled plans are never hidden (lib/plans.ts displayOrder)
+  const plans = useMemo(() => displayOrder(found.plans, labels, { usage: s.usage, devices: s.devices }), [found.plans, labels, s.usage, s.devices]);
+  const listTop = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
   const providers = [...new Set(plans.map((p) => p.provider))];
   const filtered = s.carrier === "ALL" ? null : plans.filter((p) => p.provider === s.carrier);
   const pricedCount = plans.filter(isPriced).length;
-  const top = plans.slice(0, Math.min(3, Math.max(1, pricedCount)));
+  const top = plans.slice(0, Math.min(3, Math.max(1, pricedCount, labels.size)));
   const rest = plans.slice(top.length);
   const rankOf = (id: string) => plans.findIndex((p) => p.id === id) + 1;
   const first = plans[0];
@@ -63,8 +67,8 @@ export function ResultsSection() {
           <span className="rounded-sm bg-ink px-2 py-0.5 text-xs font-semibold text-white">{label}</span>
           {biz && <span className="rounded-sm bg-surface2 px-2 py-0.5 text-xs font-semibold text-muted ring-1 ring-line">{t("businessPlansBadge")}</span>}
         </p>
-        <h2 id="section-results-h" tabIndex={-1} className="mt-3 text-[2rem] font-bold leading-tight text-ink outline-none sm:text-[2.5rem]">
-          {plans.length} {t(plans.length === 1 ? "planAvailable" : "plansAvailable")}
+        <h2 id="section-results-h" tabIndex={-1} className="mt-3 text-[2rem] font-bold leading-tight text-ink outline-none sm:text-[2.5rem]" aria-live="polite">
+          {(filtered ?? plans).length} {t((filtered ?? plans).length === 1 ? "planAvailable" : "plansAvailable")}
         </h2>
         {s.address && (
           <p className="text-muted">
@@ -85,9 +89,28 @@ export function ResultsSection() {
           />
         </div>
       ) : (
-        <>
+        <div ref={listTop} className="scroll-mt-36">
+          {providers.length > 1 && (
+            <div className="mt-6 flex flex-wrap items-center gap-2" role="group" aria-labelledby="filter-h">
+              <span id="filter-h" className="mr-1 text-sm font-semibold text-ink">
+                {t("filter")}
+              </span>
+              {["ALL", ...providers].map((p) => (
+                <Chip
+                  key={p}
+                  selected={s.carrier === p}
+                  onClick={() => {
+                    dispatch({ type: "patch", patch: { carrier: p } });
+                    window.setTimeout(() => listTop.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 30);
+                  }}
+                >
+                  {p === "ALL" ? t("all") : p}
+                </Chip>
+              ))}
+            </div>
+          )}
           {!filtered && (
-            <ol className="mt-8 space-y-3">
+            <ol className="mt-6 space-y-3">
               {top.map((p, i) => (
                 <li key={p.id}>
                   <PlanCard plan={p} rank={rankOf(p.id)} labels={labels.get(p.id) ?? []} top={first} featured={i === 0} />
@@ -111,37 +134,17 @@ export function ResultsSection() {
                 </button>
               )}
               <div id="all-plans" hidden={!showAll && !filtered} className="mt-6">
-                {providers.length > 1 && (
-                  <div className="mb-5 flex flex-wrap items-center gap-2" role="radiogroup" aria-labelledby="filter-h">
-                    <span id="filter-h" className="mr-1 text-sm font-semibold text-ink">
-                      {t("filter")}
-                    </span>
-                    {["ALL", ...providers].map((p) => (
-                      <Chip
-                        key={p}
-                        role="radio"
-                        selected={s.carrier === p}
-                        onClick={() => {
-                          dispatch({ type: "patch", patch: { carrier: p } });
-                          setShowAll(true);
-                        }}
-                      >
-                        {p === "ALL" ? t("all") : p}
-                      </Chip>
-                    ))}
-                  </div>
-                )}
                 <h3 className="mb-3 text-lg font-bold text-ink">{t(biz ? "businessPlansHeading" : filtered ? "quickComparison" : "otherPlans")}</h3>
                 {list(filtered ?? rest)}
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {s.services.includes("tv") && !empty && <DirectvTiers />}
 
-      <div className="mt-8 grid gap-4 md:grid-cols-[2fr_3fr]">
+      <div className="mt-8">
         <section aria-labelledby="adv-h" className="flex gap-3 rounded-md bg-surface2 p-5">
           <ShieldCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-primary-strong" />
           <div>
@@ -151,7 +154,6 @@ export function ResultsSection() {
             <p className="mt-1 text-sm text-muted">{t("advantageDesc")}</p>
           </div>
         </section>
-        <p className="self-center text-sm leading-relaxed text-muted">{t("priceFooter")}</p>
       </div>
     </Section>
   );

@@ -4,7 +4,7 @@
  */
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StoreProvider, useStore } from "@/lib/store";
 import { CallbackModal } from "@/components/sections/Callback";
@@ -159,10 +159,72 @@ describe("Schedule AI Callback", () => {
     const d = within(screen.getByRole("dialog"));
     await user.type(d.getByLabelText("Email Address"), "jordan@example.com");
     await verify(user, d);
-    await user.click(d.getByRole("checkbox", { name: /I agree that Assured Saving LLC/ }));
+    // Outside calling hours there is no Call Me Now at all; Schedule Callback is the main action (UX #10)
+    expect(d.queryByRole("button", { name: "Call Me Now" })).toBeNull();
+    expect(d.getByRole("button", { name: "Schedule Callback" }).className).toMatch(/bg-primary/);
+    vi.useRealTimers();
+  });
+});
+
+describe("Schedule AI Callback: UX review fixes", () => {
+  it("starts with focus on the email field (UX #15)", async () => {
+    const { d } = setup();
+    await waitFor(() => expect(d.getByLabelText("Email Address")).toHaveFocus());
+    vi.useRealTimers();
+  });
+
+  it("Call Me Now on an empty form flags the fields, not a 'preferred time', and focuses the first one (UX #9)", async () => {
+    const { user, d } = setup();
     await user.click(d.getByRole("button", { name: "Call Me Now" }));
-    expect(screen.queryByText("You're All Set!")).toBeNull();
-    expect(d.getByText("Complete phone and preferred time to continue")).toBeInTheDocument();
+    expect(d.queryByText("Complete phone and preferred time to continue")).toBeNull();
+    expect(d.getByText("Enter a valid email address")).toBeInTheDocument();
+    expect(d.getByLabelText("Email Address")).toHaveFocus();
+    vi.useRealTimers();
+  });
+
+  it("clears an error as soon as the field is fixed (UX #9)", async () => {
+    const { user, d } = setup();
+    await user.click(d.getByRole("button", { name: "Call Me Now" }));
+    expect(d.getByText("Enter a valid email address")).toBeInTheDocument();
+    await user.type(d.getByLabelText("Email Address"), "jordan@example.com");
+    expect(d.queryByText("Enter a valid email address")).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("moves focus to the consent box after verifying (UX #14)", async () => {
+    const { user, d } = setup();
+    await verify(user, d);
+    expect(d.getByRole("checkbox", { name: /I agree that Assured Saving LLC/ })).toHaveFocus();
+    vi.useRealTimers();
+  });
+
+  it("explains a short number when Send Code is tapped (UX #23)", async () => {
+    const { user, d } = setup();
+    await user.type(d.getByLabelText("Mobile Phone"), "21255");
+    await user.click(d.getByRole("button", { name: "Send Code" }));
+    expect(d.getByText("Enter a valid phone number first.")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("gives every time zone a distinct name (UX #12)", () => {
+    const { d } = setup();
+    const opts = [...(d.getByRole("combobox", { name: "Your Timezone" }) as HTMLSelectElement).options].map((o) => o.textContent);
+    expect(new Set(opts).size).toBe(opts.length);
+    vi.useRealTimers();
+  });
+
+  it("confirms the booked time after scheduling (UX #11)", async () => {
+    const { user, d } = setup();
+    await user.type(d.getByLabelText("Email Address"), "jordan@example.com");
+    await verify(user, d);
+    await user.click(d.getByRole("checkbox", { name: /I agree that Assured Saving LLC/ }));
+    const [day, time] = d.getAllByRole("combobox", { name: /Preferred Time/ }) as HTMLSelectElement[];
+    await user.selectOptions(time, time.options[1].value);
+    const when = `${day.selectedOptions[0].textContent}`;
+    const at = `${time.selectedOptions[0].textContent}`;
+    await user.click(d.getByRole("button", { name: "Schedule Callback" }));
+    expect(await screen.findByText("You're All Set!")).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${when}.*${at}`.replace(/[()]/g, "\\$&")))).toBeInTheDocument();
     vi.useRealTimers();
   });
 });

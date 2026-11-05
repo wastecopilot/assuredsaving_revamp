@@ -1,5 +1,6 @@
 "use client";
 import { ArrowLeft, Building2, Home, MapPin, PhoneCall, RotateCcw, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { FOOTER_LINKS, SERVICE_ORDER, siteUrl } from "@/data/catalog";
 import type { Key } from "@/lib/i18n";
@@ -70,7 +71,7 @@ export function Header() {
   const current = STAGE_NAMES[s.stage];
   const idx = Math.max(0, visible.indexOf(current));
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface [@media(max-height:500px)]:static">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
         {s.stage > 0 ? (
           <button
@@ -84,16 +85,18 @@ export function Header() {
         ) : null}
         <a href="#section-intent" className="flex min-h-11 items-center gap-2.5 rounded-md">
           <Logo />
-          <span className={clsx("text-[17px] font-bold tracking-tight text-ink", s.stage > 0 && "max-sm:sr-only")}>{t("brand")}</span>
+          <span className="text-[17px] font-bold tracking-tight text-ink max-[359px]:sr-only">{t("brand")}</span>
         </a>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-3">
-          <p className="hidden text-xs font-semibold uppercase tracking-wider text-muted sm:block" aria-live="polite">
-            {t(STAGE_LABEL[current])}
-          </p>
-          <span className="hidden h-6 w-px bg-line sm:block" aria-hidden />
+          {s.stage > 0 && (
+            <>
+              <p className="hidden text-sm font-semibold uppercase tracking-wider text-muted md:block">{t(STAGE_LABEL[current])}</p>
+              <span className="hidden h-6 w-px bg-line md:block" aria-hidden />
+            </>
+          )}
           <LangSwitch />
-          <span className="hidden rounded-sm border border-line px-2 py-1 text-xs font-semibold text-muted sm:inline-block">{t("usOnly")}</span>
+          <span className="hidden rounded-sm border border-line px-2 py-1 text-sm font-semibold text-muted sm:inline-block">{t("usOnly")}</span>
         </div>
       </div>
       {/* Segmented progress: one segment per step that applies */}
@@ -120,7 +123,7 @@ function ContextBar() {
         {/* relative: screen-reader-only labels are absolutely positioned and must be clipped here too */}
         <ul className="relative flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
           {nameOk(s.name) && (
-            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-ink max-sm:hidden">
+            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-ink max-xl:hidden">
               <User aria-hidden className="size-4 text-muted" />
               <span className="max-w-[9rem] truncate [overflow-wrap:normal]">{first}</span>
             </li>
@@ -157,19 +160,49 @@ function ContextBar() {
           <PhoneCall aria-hidden className="size-4" />
           {t("scheduleCallback")}
         </button>
+        <StartOver />
+      </div>
+    </div>
+  );
+}
+
+/** "Start a new search" asks first (official "Start Over" / "Cancel"), so a stray tap can't wipe the visit. */
+function StartOver() {
+  const { t, dispatch } = useStore();
+  const [asking, setAsking] = useState(false);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (asking) confirmRef.current?.focus();
+  }, [asking]);
+  if (asking)
+    return (
+      <div className="flex shrink-0 items-center gap-1" role="group" aria-label={t("startOver")}>
         <button
+          ref={confirmRef}
           type="button"
           onClick={() => {
+            setAsking(false);
             dispatch({ type: "reset" });
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+          className="inline-flex min-h-11 items-center rounded-md bg-ink px-3 text-sm font-semibold text-white"
         >
-          <RotateCcw aria-hidden className="size-4" />
-          <span className="max-sm:sr-only">{t("startOver")}</span>
+          {t("startOverConfirm")}
+        </button>
+        <button type="button" onClick={() => setAsking(false)} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-ink hover:bg-surface">
+          {t("startOverCancel")}
         </button>
       </div>
-    </div>
+    );
+  return (
+    <button
+      type="button"
+      onClick={() => setAsking(true)}
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+    >
+      <RotateCcw aria-hidden className="size-4" />
+      <span className="max-sm:sr-only">{t("startOver")}</span>
+    </button>
   );
 }
 

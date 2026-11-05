@@ -83,7 +83,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ l
         {trailing && <span className="absolute right-2.5 top-1/2 -translate-y-1/2">{trailing}</span>}
       </div>
       {error ? (
-        <p id={`${fid}-err`} role="alert" className="mt-1.5 flex items-start gap-1.5 text-sm text-danger">
+        <p id={`${fid}-err`} className="mt-1.5 flex items-start gap-1.5 text-sm text-danger">
           <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" />
           {error}
         </p>
@@ -139,7 +139,7 @@ export function Checkbox({ id, checked, onChange, children, error }: { id: strin
         <span className="text-sm leading-relaxed text-ink">{children}</span>
       </label>
       {error && (
-        <p id={`${id}-err`} role="alert" className="mt-1.5 flex items-start gap-1.5 text-sm text-danger">
+        <p id={`${id}-err`} className="mt-1.5 flex items-start gap-1.5 text-sm text-danger">
           <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" />
           {error}
         </p>

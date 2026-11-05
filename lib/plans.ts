@@ -3,7 +3,7 @@
  * from the plan's own data, so they can never contradict each other.
  * Verified by scripts/verify-data.ts.
  */
-import { BUNDLE_PRESETS, PLANS, SERVICE_ORDER, type Plan, type ServiceId, type Tech } from "@/data/sample";
+import { BUNDLE_PRESETS, PLANS, SERVICE_ORDER, type AddressType, type Plan, type ServiceId, type Tech } from "@/data/sample";
 import { translate, type Key, type Lang } from "./i18n";
 
 type Priced = Plan & { pricing: Extract<Plan["pricing"], { kind: "priced" }> };
@@ -126,27 +126,49 @@ export function bestFor(p: Plan, lang: Lang): string | null {
  * "Why This Plan" reasons, built only from the official sentence templates and
  * the plan's own numbers, compared with the top match.
  */
-export function planReasons(p: Plan, top: Plan | undefined, lang: Lang): string[] {
+export function planReasons(p: Plan, top: Plan | undefined, lang: Lang, type: AddressType = "residential"): string[] {
   const t = (k: Key, v?: Record<string, string | number>) => translate(lang, k, v);
   const speed = speedText(p, lang);
   const tech = techLabel(p, lang);
+  const internet = p.services.includes("internet");
   const out: string[] = [];
   if (!top || top.id === p.id) {
-    if (speed) out.push(t("reasonSuitsMost", { speed }));
+    // "…suit most households" is for homes only
+    if (speed && type === "residential") out.push(t("reasonSuitsMost", { speed }));
     return out;
   }
-  out.push(
-    p.tech !== top.tech
-      ? t("reasonDifferentTech", { provider: p.provider, tech, topProvider: top.provider, topTech: techLabel(top, lang) })
-      : t("reasonAlsoDelivers", { provider: p.provider, tech }),
-  );
+  // Technology sentences only make sense for internet ("connectivity"); skip them for security, phone and mobile
+  if (internet && top.services.includes("internet")) {
+    out.push(
+      p.tech !== top.tech
+        ? t("reasonDifferentTech", { provider: p.provider, tech, topProvider: top.provider, topTech: techLabel(top, lang) })
+        : t("reasonAlsoDelivers", { provider: p.provider, tech }),
+    );
+  }
   if (isPriced(p) && isPriced(top)) {
     const price = `${money(allInNow(p))}${t("perMo")}`;
     const delta = allInNow(top) - allInNow(p);
     if (delta > 0) out.push(t("reasonCheaperThanTop", { price, delta: (delta / 100).toFixed(2), topProvider: top.provider, annual: Math.round((delta * 12) / 100) }));
     else if (delta === 0) out.push(t("reasonMatchesTop", { topProvider: top.provider, price }));
-    else if (speed) out.push(t("reasonMoreExpensive", { price, speed }));
   }
   if (speed && (p.downloadMbps ?? 0) > (top.downloadMbps ?? 0)) out.push(t("reasonFasterDownloads", { speed }));
   return out;
+}
+
+/** Usage that needs speed: gaming, 4K, remote work, data-heavy, media; or 50+ devices. */
+const HEAVY = new Set(["gaming", "4k", "remote", "data", "streaming"]);
+
+/**
+ * The order plans are shown in. The visitor's answers pick the top pick (the Fastest
+ * plan for heavy use, otherwise the Most Affordable), every other labelled plan follows
+ * so no "best" plan is hidden, then the rest by all-in price. Rank = position here.
+ */
+export function displayOrder(plans: Plan[], labels: Map<string, Label[]>, answers: { usage: string[]; devices: number }): Plan[] {
+  const heavy = answers.usage.some((u) => HEAVY.has(u)) || answers.devices >= 50;
+  const withLabel = (l: Label) => plans.find((p) => labels.get(p.id)?.includes(l));
+  const first = (heavy && withLabel("fastest")) || withLabel("mostAffordable") || withLabel("bestValue") || plans[0];
+  if (!first) return plans;
+  const labelled = plans.filter((p) => p.id !== first.id && labels.has(p.id));
+  const rest = plans.filter((p) => p.id !== first.id && !labels.has(p.id));
+  return [first, ...labelled, ...rest];
 }

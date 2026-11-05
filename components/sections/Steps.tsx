@@ -23,11 +23,13 @@ export function NameSection() {
             if (valid) goNext(STAGE.address);
           }}
         >
+          <label htmlFor="full-name" className="mb-1.5 block text-sm font-semibold text-ink">
+            {t("namePlaceholder")}
+          </label>
           <div className="relative">
             <User aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted" />
             <input
-              aria-label={t("namePlaceholder")}
-              placeholder={t("namePlaceholder")}
+              id="full-name"
               autoComplete="name"
               autoCapitalize="words"
               autoCorrect="off"
@@ -72,12 +74,16 @@ export function UsageSection() {
               key={u.id}
               type="button"
               aria-pressed={on}
+              aria-describedby={`use-${u.id}-d`}
               onClick={() => dispatch({ type: "patch", patch: { usage: on ? s.usage.filter((x) => x !== u.id) : [...s.usage, u.id] } })}
               className={clsx("press relative flex min-h-28 flex-col items-start gap-1.5 rounded-md border p-4 text-left", on ? "border-ink bg-surface ring-1 ring-ink" : "border-line-strong bg-surface hover:border-ink")}
             >
               <Icon aria-hidden className="size-6" style={{ color: c.text }} />
               <span className="mt-2 font-semibold leading-tight text-ink">{t(u.title)}</span>
-              <span className="text-sm text-muted">{t(u.desc)}</span>
+              <span id={`use-${u.id}-d`} className="text-sm text-muted">
+                <span className="sr-only">, </span>
+                {t(u.desc)}
+              </span>
               <span aria-hidden className={clsx("absolute right-3 top-3 flex size-5 items-center justify-center rounded-sm border", on ? "border-ink bg-ink text-white" : "border-line-strong")}>
                 {on && <Check className="size-3.5" strokeWidth={3} />}
               </span>
@@ -97,11 +103,13 @@ export function UsageSection() {
           maxLabel={t("hundredPlus")}
         />
       </div>
+      {s.stage === STAGE.usage && (
       <div className="mt-6">
         <Button size="lg" disabled={!ready} onClick={() => goNext(STAGE.usage)} iconRight={ready ? <ArrowRight aria-hidden className="size-5" /> : undefined} className="w-full sm:w-auto sm:min-w-56">
           {!ready ? t("usageCtaWaiting") : toTv ? t("usageCtaTv") : t("usageCta")}
         </Button>
       </div>
+      )}
     </Section>
   );
 }
@@ -176,11 +184,13 @@ export function TvSection() {
             })}
           </div>
         </Group>
+        {s.stage === STAGE.tv && (
         <div className="pt-2">
           <Button size="lg" disabled={!ready} onClick={() => goNext(STAGE.tv)} iconRight={ready ? <ArrowRight aria-hidden className="size-5" /> : undefined} className="w-full sm:w-auto sm:min-w-56">
             {!ready ? t("answerToContinue") : t(bundle ? "ctaBundle" : "ctaTv")}
           </Button>
         </div>
+        )}
       </div>
     </Section>
   );

@@ -61,7 +61,7 @@ async function session(id, browser) {
     await p.waitForTimeout(120);
     const options = await p.getByRole('option').count();
     if (!options) {
-      const err = await p.getByText('US addresses only — please pick from the list').count();
+      const err = (await p.getByText('US addresses only — please pick from the list').count()) + (await p.getByText('Include State (e.g. NY, CA) and a street number').count());
       if (q.trim() && !err) fail(id, `no suggestions and no error for "${q.slice(0, 30)}"`);
       if (err) stats.usError++;
       if (chance(0.3)) {
@@ -79,7 +79,7 @@ async function session(id, browser) {
     } else await p.getByRole('option').nth(Math.floor(rnd() * Math.min(3, await p.getByRole('option').count()))).click();
     await p.getByRole('button', { name: 'Check Availability' }).click();
 
-    const chooser = p.getByRole('group', { name: 'Business address detected' });
+    const chooser = p.locator('[aria-label="Business address detected"]');
     await p.waitForTimeout(250);
     if (await chooser.count()) {
       stats.businessChooser++;
@@ -139,6 +139,7 @@ async function session(id, browser) {
     // Maybe restart mid-scan
     if (chance(0.05)) {
       await p.getByRole('button', { name: /Start a new search/ }).click();
+      await p.getByRole('button', { name: 'Start Over', exact: true }).click();
       stats.restarts++;
       if ((await selected(p)).length) fail(id, 'start over kept services');
       await ctx.close();
@@ -166,7 +167,8 @@ async function session(id, browser) {
       const d = p.getByRole('dialog');
       await d.waitFor();
       // Submitting empty must show errors, never succeed
-      await d.getByRole('button', { name: 'Call Me Now' }).click();
+      const firstBtn = (await d.getByRole('button', { name: 'Call Me Now' }).count()) ? 'Call Me Now' : 'Schedule Callback';
+      await d.getByRole('button', { name: firstBtn }).click();
       if (await d.getByText("You're All Set!").count()) fail(id, 'callback succeeded with an empty form');
       else stats.callbackErrorsShown++;
       await d.getByLabel('Email Address').fill(pick(['jordan@example.com', 'bad-email', 'a@b.co']));
@@ -185,7 +187,13 @@ async function session(id, browser) {
       }
       if (chance(0.7)) await d.locator('#cb-call').check();
       if (chance(0.4)) await d.locator('#cb-sms').check();
-      await d.getByRole('button', { name: pick(['Call Me Now', 'Schedule Callback']) }).click();
+      const canNow = await d.getByRole('button', { name: 'Call Me Now' }).count();
+      if (!canNow || chance(0.5)) {
+        const sel = d.locator('#cb-time ~ select, select').last();
+        const n = await sel.locator('option').count();
+        if (n > 1) await sel.selectOption({ index: 1 + Math.floor(rnd() * (n - 1)) });
+        await d.getByRole('button', { name: 'Schedule Callback' }).click();
+      } else await d.getByRole('button', { name: 'Call Me Now' }).click();
       const done = await d.getByText("You're All Set!").count();
       const verified = await d.getByText('Verified ✓').count();
       const consent = await d.locator('#cb-call').isChecked().catch(() => true);
