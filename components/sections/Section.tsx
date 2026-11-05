@@ -2,49 +2,43 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import clsx from "clsx";
-import { STAGE_NAMES, sectionId, useStore, type StageName } from "@/lib/store";
+import { sectionId, type StageName } from "@/lib/store";
 
-/** A numbered stage card. Reveals with a subtle rise when it unlocks. */
-export function Section({ stage, accent, children, wide, className }: { stage: StageName; accent: string; children: ReactNode; wide?: boolean; className?: string }) {
+/**
+ * A step band: full width, divided by a hairline. On desktop the first child (the
+ * heading) sits in a sticky left column and the rest in the right column, like a
+ * well-made settings or checkout form. `wide` (results) uses the full width.
+ */
+export function Section({ stage, children, className, wide, tone = "plain" }: { stage: StageName; children: ReactNode; className?: string; wide?: boolean; tone?: "plain" | "warm" }) {
   const reduce = useReducedMotion();
-  const { s } = useStore();
-  const visible = STAGE_NAMES.filter((n) => (n === "usage" ? s.services.includes("internet") : n === "tv" ? s.services.includes("tv") : true));
-  const num = visible.indexOf(stage) + 1;
   return (
     <motion.section
       id={sectionId(stage)}
       aria-labelledby={`${sectionId(stage)}-h`}
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 32 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: reduce ? 0.1 : 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className={clsx("mx-auto scroll-mt-24 px-4 sm:px-6", wide ? "max-w-6xl" : "max-w-4xl", className)}
+      transition={{ duration: reduce ? 0.1 : 0.3, ease: [0.2, 0, 0, 1] }}
+      className={clsx("scroll-mt-28 border-b border-line", tone === "warm" ? "bg-surface2" : "bg-surface", className)}
     >
-      <div className="relative rounded-xl border border-line bg-surface p-5 shadow-md sm:p-10">
-        <span
-          aria-hidden
-          className="absolute -top-5 left-5 flex size-10 items-center justify-center rounded-full font-display text-lg font-extrabold text-white shadow-glow ring-4 ring-canvas sm:left-10"
-          style={{ background: accent }}
-        >
-          {num}
-        </span>
+      <div className={clsx("mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14", !wide && "md:grid md:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] md:gap-x-12 [&>*:first-child]:md:sticky [&>*:first-child]:md:top-32 [&>*:first-child]:md:row-span-6 [&>*:first-child]:md:self-start [&>*:not(:first-child)]:md:col-start-2")}>
         {children}
       </div>
     </motion.section>
   );
 }
 
-/** Section heading: an eyebrow, a big two-tone title, and an optional subtitle. */
-export function Heading({ id, eyebrow, a, b, sub, as = "h2" }: { id: string; eyebrow?: string; a: string; b?: string; sub?: string; as?: "h1" | "h2" }) {
-  const H = as;
+/** Section heading: optional eyebrow, a title with one underlined phrase, a subtitle. */
+export function Heading({ id, eyebrow, a, b, after, sub }: { id: string; eyebrow?: string; a: string; b?: string; after?: string; sub?: string; dark?: boolean }) {
   return (
-    <div>
-      {eyebrow && <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">{eyebrow}</p>}
-      <H id={id} tabIndex={-1} className="mt-2 font-display text-3xl font-extrabold leading-[1.05] text-ink outline-none sm:text-5xl">
-        {a} {b && <span className="text-brand">{b}</span>}
-      </H>
-      {sub && <p className="mt-3 max-w-2xl text-base text-muted sm:text-lg">{sub}</p>}
+    <div className="mb-6 md:mb-0">
+      {eyebrow && <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">{eyebrow}</p>}
+      <h2 id={id} tabIndex={-1} className="text-[1.75rem] font-bold leading-tight text-ink outline-none sm:text-[2rem]">
+        {a}{" "}
+        {b && <span className="underline decoration-primary decoration-[0.14em] underline-offset-[0.14em]">{b}</span>}
+        {after}
+      </h2>
+      {sub && <p className="mt-2 text-base text-muted">{sub}</p>}
     </div>
   );
 }
-

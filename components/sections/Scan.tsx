@@ -1,30 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { BadgeDollarSign, Check, ListOrdered, Loader2, Radar, Sparkles } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import clsx from "clsx";
-import { SERVICE_ORDER } from "@/data/sample";
 import { resultsFor } from "@/lib/plans";
 import { STAGE, useStore } from "@/lib/store";
-import { service } from "@/lib/tokens";
-import { SERVICE_ICON, Skeleton } from "../ui";
 import { Section } from "./Section";
 
 const TOTAL = 4500;
-const STAGES = [
-  { k: "scan1", icon: Radar },
-  { k: "scan2", icon: BadgeDollarSign },
-  { k: "scan3", icon: ListOrdered },
-  { k: "scan4", icon: Sparkles },
-] as const;
+const STATUS = ["status0", "status1", "status2", "status3", "status4"] as const;
 
-/**
- * About 4.5 seconds of named stages. Progress comes from elapsed time and a
- * fallback timer finishes regardless, so the scan can never get stuck.
- */
+/** The official "Assured Saving Agent — Live" step. About 4.5 s; a fallback timer always finishes it. */
 export function ScanSection() {
   const { s, dispatch, t, goNext } = useStore();
-  const reduce = useReducedMotion();
   const [elapsed, setElapsed] = useState(0);
   const finished = useRef(false);
 
@@ -50,86 +37,69 @@ export function ScanSection() {
   }, [dispatch, goNext]);
 
   const pct = Math.min(100, Math.round((elapsed / TOTAL) * 100));
-  const idx = Math.min(STAGES.length - 1, Math.floor((elapsed / TOTAL) * STAGES.length));
-  const chosen = SERVICE_ORDER.filter((x) => s.services.includes(x));
-  const colors = chosen.map((x) => service[x].vivid);
-  const ring = colors.length > 1 ? `conic-gradient(${[...colors, colors[0]].join(", ")})` : colors[0] ?? "var(--primary)";
+  const idx = Math.min(STATUS.length - 1, Math.floor((elapsed / TOTAL) * STATUS.length));
   const providers = [...new Set(resultsFor(s.services).plans.map((p) => p.provider))];
+  const providerDone = (i: number) => elapsed / TOTAL > 0.2 + i * 0.12;
 
   return (
-    <Section stage="scan" accent="linear-gradient(135deg, #10C79A, #1F6BFF)">
-      <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
-        <div className="mx-auto">
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-surface2 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-ink">
-            <span className="relative flex size-2.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-security opacity-70" />
-              <span className="relative inline-flex size-2.5 rounded-full bg-security" />
-            </span>
-            {t("agentLive")}
+    <Section stage="scan" tone="warm">
+      <div>
+        <h2 id="section-scan-h" tabIndex={-1} className="flex items-center gap-2.5 text-[1.75rem] font-bold leading-tight text-ink outline-none sm:text-[2rem]">
+          <span aria-hidden className="relative flex size-2.5 shrink-0">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
+          </span>
+          {t("agentLive")}
+        </h2>
+        {s.address && (
+          <p className="mt-2 text-muted">
+            {s.address.line1}, {s.address.city}, {s.address.state} {s.address.zip}
           </p>
-          <div aria-hidden className="relative mx-auto size-44 sm:size-52">
-            <motion.div className="absolute inset-0 rounded-full" style={{ background: ring }} animate={reduce ? undefined : { rotate: 360 }} transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }} />
-            <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-surface shadow-sm">
-              <span className="font-display text-5xl font-extrabold text-ink tabular">{pct}%</span>
-              <span className="mt-2 flex gap-1">
-                {chosen.map((x) => {
-                  const Icon = SERVICE_ICON[x];
-                  return (
-                    <span key={x} className="flex size-7 items-center justify-center rounded-full" style={{ background: service[x].vivid, color: service[x].on }}>
-                      <Icon className="size-3.5" strokeWidth={2.8} />
+        )}
+      </div>
+      <div>
+        <div aria-hidden className="h-1.5 overflow-hidden bg-line">
+          <div className="h-full bg-primary transition-[width] duration-150 ease-linear" style={{ width: `${pct}%` }} />
+        </div>
+        <ol className="mt-6 space-y-3">
+          {STATUS.map((k, i) => {
+            const state = i < idx || pct >= 100 ? "done" : i === idx ? "now" : "wait";
+            return (
+              <li key={k} className={clsx("flex items-center gap-3", state === "wait" ? "text-muted" : "text-ink")}>
+                <span className={clsx("flex size-6 shrink-0 items-center justify-center rounded-sm", state === "done" ? "bg-ink text-white" : state === "now" ? "border-2 border-ink" : "border border-line-strong")}>
+                  {state === "done" ? <Check aria-hidden className="size-3.5" strokeWidth={3} /> : state === "now" ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : null}
+                </span>
+                <span className={clsx(state === "now" && "font-semibold")}>{t(k)}</span>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="sr-only" role="status" aria-live="polite">
+          {t(STATUS[idx])}
+        </p>
+
+        {providers.length > 0 && (
+          <div className="mt-8 rounded-md border border-line-strong bg-surface p-5">
+            <p className="font-semibold text-ink">{t("availableNow")}</p>
+            <p className="mt-1 text-sm text-muted">{t("scanSubtitle")}</p>
+            <ul className="mt-3 divide-y divide-line">
+              {providers.map((p, i) => (
+                <li key={p} className="flex items-center justify-between gap-3 py-3 text-sm">
+                  <span className="font-semibold text-ink">{p}</span>
+                  {providerDone(i) ? (
+                    <Check aria-hidden className="size-4 text-success" strokeWidth={3} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-muted">
+                      <Loader2 aria-hidden className="size-3.5 animate-spin" />
+                      {t("confirming")}
                     </span>
-                  );
-                })}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div>
-          <h2 id="section-scan-h" tabIndex={-1} className="font-display text-2xl font-extrabold leading-tight text-ink outline-none sm:text-3xl">
-            {t("scanTitle")} <span className="text-brand">{s.address ? `${s.address.line1}, ${s.address.city}` : ""}</span>
-          </h2>
-          <p className="sr-only" role="status" aria-live="polite">
-            {t("scanSr", { pct: Math.floor(pct / 25) * 25 })}
-          </p>
-          <ol className="mt-5 space-y-2.5">
-            {STAGES.map((st, i) => {
-              const state = i < idx || pct >= 100 ? "done" : i === idx ? "now" : "wait";
-              const c = service[chosen[i % Math.max(1, chosen.length)] ?? "internet"];
-              return (
-                <li key={st.k} className={clsx("flex items-center gap-3 rounded-md border-2 px-4 py-3 transition-all", state === "now" ? "bg-surface shadow-sm" : "border-transparent bg-surface2")} style={state === "now" ? { borderColor: c.vivid } : undefined}>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full" style={state === "wait" ? { background: "var(--line)", color: "var(--muted)" } : { background: c.vivid, color: c.on }}>
-                    {state === "done" ? <Check aria-hidden className="size-4" strokeWidth={3} /> : <st.icon aria-hidden className="size-4" strokeWidth={2.4} />}
-                  </span>
-                  <span className={clsx("flex-1 text-sm font-bold", state === "wait" ? "text-muted" : "text-ink")}>{t(st.k)}</span>
-                  <span className="text-xs font-semibold text-muted">
-                    {state === "now" ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Loader2 aria-hidden className="size-3.5 animate-spin" />
-                        {t("stageNow")}
-                      </span>
-                    ) : state === "done" ? t("stageDone") : t("stageWait")}
-                  </span>
+                  )}
                 </li>
-              );
-            })}
-          </ol>
-          {providers.length > 0 && (
-            <div className="mt-6">
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">{t("previewTitle")}</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {providers.map((p, i) => (
-                  <li key={p} className={clsx("rounded-full border-2 px-3 py-1 text-sm font-bold transition-colors", i <= idx + 1 ? "border-primary bg-primary-soft text-primary" : "border-line text-muted")}>
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div className="mt-6 space-y-2" aria-hidden>
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+              ))}
+            </ul>
+            <p className="mt-3 text-xs leading-relaxed text-muted">{t("priceFooter")}</p>
           </div>
-        </div>
+        )}
       </div>
     </Section>
   );

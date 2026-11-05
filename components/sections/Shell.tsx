@@ -1,125 +1,211 @@
 "use client";
-import { ArrowLeft, Eye, ShieldCheck, Zap } from "lucide-react";
+import { ArrowLeft, Building2, Home, MapPin, PhoneCall, RotateCcw, User } from "lucide-react";
 import clsx from "clsx";
-import { SERVICE_ORDER } from "@/data/catalog";
-import { STAGE_NAMES, useStore } from "@/lib/store";
-import { color, service } from "@/lib/tokens";
+import { FOOTER_LINKS, SERVICE_ORDER, siteUrl } from "@/data/catalog";
+import type { Key } from "@/lib/i18n";
+import { STAGE_NAMES, useStore, type StageName } from "@/lib/store";
+import { service } from "@/lib/tokens";
+import { cleanText, nameOk } from "@/lib/schedule";
+import { SERVICE_ICON } from "../ui";
 
-export function Logo({ size = 36 }: { size?: number }) {
+/** Brand mark: an ink tile with an orange shield and check. */
+export function Logo({ size = 32 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden className="shrink-0">
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--grad-from)" />
-          <stop offset="1" stopColor="var(--grad-to)" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="10" fill="url(#lg)" />
-      <path d="M8.5 22 14.6 8.5h2.8L23.5 22h-3.2l-1.2-3h-6.2l-1.2 3H8.5Zm5.6-5.6h3.8L16 11.8l-1.9 4.6Z" fill="#fff" />
-      <circle cx="25" cy="7" r="3" fill="var(--phone)" stroke="#fff" strokeWidth="1.5" />
+      <rect width="32" height="32" rx="6" fill="#141414" />
+      <path d="M16 6.5 8.5 9.4v5.4c0 4.8 3.2 8.1 7.5 9.4 4.3-1.3 7.5-4.6 7.5-9.4V9.4L16 6.5Z" fill="#FF5A1F" />
+      <path d="m12.4 15.6 2.6 2.6 4.8-5" fill="none" stroke="#141414" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function Flag() {
+/** The stages that apply to this visitor (usage only with internet, TV setup only with TV). */
+export function useVisibleStages(): StageName[] {
+  const { s } = useStore();
+  return STAGE_NAMES.filter((n) => (n === "usage" ? s.services.includes("internet") : n === "tv" ? s.services.includes("tv") : true));
+}
+
+/**
+ * The step name shown at the top, as on the official site (no step numbers):
+ * Intent, then Name & Address (also covers usage), then Details for TV, scan and results.
+ */
+export const STAGE_LABEL: Record<StageName, Key> = {
+  intent: "stage_intent",
+  address: "stage_address",
+  usage: "stage_address",
+  tv: "stage_details",
+  scan: "stage_details",
+  results: "stage_details",
+};
+
+function LangSwitch() {
+  const { s, dispatch } = useStore();
   return (
-    <svg viewBox="0 0 20 14" aria-hidden className="h-3 w-[18px] rounded-[2px]">
-      <rect width="20" height="14" fill="#fff" />
-      {[0, 2, 4, 6, 8, 10, 12].map((y) => (
-        <rect key={y} y={y} width="20" height="1" fill="#E0314B" />
+    <div className="flex items-center text-sm font-semibold">
+      {(["en", "es"] as const).map((l, i) => (
+        <span key={l} className="flex items-center">
+          {i === 1 && (
+            <span aria-hidden className="px-0.5 text-line-strong">
+              |
+            </span>
+          )}
+          <button
+            type="button"
+            lang={l}
+            aria-pressed={s.lang === l}
+            onClick={() => dispatch({ type: "patch", patch: { lang: l } })}
+            className={clsx("min-h-11 min-w-11 rounded-md px-2 transition-colors", s.lang === l ? "text-ink underline decoration-primary decoration-2 underline-offset-4" : "text-muted hover:text-ink")}
+          >
+            {l === "en" ? "ENG" : "ESP"}
+          </button>
+        </span>
       ))}
-      <rect width="9" height="7" fill="#1F6BFF" />
-    </svg>
+    </div>
   );
 }
 
 export function Header() {
   const { s, dispatch, t } = useStore();
-  const visible = STAGE_NAMES.filter((n) => (n === "usage" ? s.services.includes("internet") : n === "tv" ? s.services.includes("tv") : true));
+  const visible = useVisibleStages();
   const current = STAGE_NAMES[s.stage];
   const idx = Math.max(0, visible.indexOf(current));
-  const pct = ((idx + 1) / visible.length) * 100;
-  const colors = SERVICE_ORDER.filter((x) => s.services.includes(x)).map((x) => service[x].vivid);
-  const bar = colors.length > 1 ? `linear-gradient(90deg, ${colors.join(", ")})` : colors[0] ?? `linear-gradient(90deg, ${color.primary}, #1F6BFF)`;
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-canvas/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
         {s.stage > 0 ? (
           <button
             type="button"
             onClick={() => dispatch({ type: "back" })}
-            aria-label={t("backAria")}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 border-line bg-surface px-3 text-sm font-bold text-ink transition-colors hover:border-primary hover:text-primary"
+            className="press -ml-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-ink hover:bg-surface2"
           >
-            <ArrowLeft aria-hidden className="size-4" strokeWidth={2.6} />
-            <span className="hidden sm:inline">{t("back")}</span>
+            <ArrowLeft aria-hidden className="size-4" />
+            <span className="max-sm:sr-only">{t("back")}</span>
           </button>
-        ) : (
-          <a href="#section-intent" className="flex min-h-11 min-w-11 items-center gap-2 rounded-full" aria-label="Assured Saving">
-            <Logo size={34} />
-            <span className="hidden font-display text-lg leading-none text-ink sm:inline">
-              <span className="font-semibold">Assured</span> <span className="font-extrabold">Saving</span>
-            </span>
-          </a>
-        )}
-        <div className="min-w-0 flex-1 px-1">
-          <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted" aria-live="polite">
-            <span className="text-primary">{t("step", { n: idx + 1 })}</span> · {t(`stage_${current}`)}
+        ) : null}
+        <a href="#section-intent" className="flex min-h-11 items-center gap-2.5 rounded-md">
+          <Logo />
+          <span className={clsx("text-[17px] font-bold tracking-tight text-ink", s.stage > 0 && "max-sm:sr-only")}>{t("brand")}</span>
+        </a>
+
+        <div className="ml-auto flex items-center gap-1 sm:gap-3">
+          <p className="hidden text-xs font-semibold uppercase tracking-wider text-muted sm:block" aria-live="polite">
+            {t(STAGE_LABEL[current])}
           </p>
-          {s.name.trim().length >= 2 && <p className="hidden truncate text-xs font-semibold text-ink sm:block">{s.name}</p>}
+          <span className="hidden h-6 w-px bg-line sm:block" aria-hidden />
+          <LangSwitch />
+          <span className="hidden rounded-sm border border-line px-2 py-1 text-xs font-semibold text-muted sm:inline-block">{t("usOnly")}</span>
         </div>
-        <div role="group" aria-label={t("language")} className="flex rounded-full border-2 border-line bg-surface p-0.5">
-          {(["en", "es"] as const).map((l) => (
-            <button
-              key={l}
-              type="button"
-              lang={l}
-              aria-pressed={s.lang === l}
-              onClick={() => dispatch({ type: "patch", patch: { lang: l } })}
-              className={clsx("min-h-11 min-w-11 rounded-full px-2.5 text-xs font-extrabold transition-colors", s.lang === l ? "bg-ink text-white" : "text-muted hover:text-ink")}
-            >
-              {l === "en" ? "ENG" : "ESP"}
-            </button>
-          ))}
-        </div>
-        <span title={t("usOnlyTitle")} className="hidden items-center gap-1.5 rounded-full border-2 border-line bg-surface px-3 py-2 text-xs font-extrabold uppercase text-ink md:inline-flex">
-          <Flag />
-          {t("usOnly")}
-        </span>
-        {s.stage > 0 && (
-          <span className="hidden sm:block">
-            <Logo size={34} />
-          </span>
-        )}
       </div>
-      <div className="h-1.5 w-full bg-line" role="progressbar" aria-label={t("step", { n: idx + 1 })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
-        <div className="h-full rounded-r-full transition-[width] duration-500 ease-out" style={{ background: bar, width: `${pct}%` }} />
+      {/* Segmented progress: one segment per step that applies */}
+      <div className="flex gap-px" aria-hidden>
+        {visible.map((n, i) => (
+          <span key={n} className={clsx("h-[3px] flex-1 transition-colors", i <= idx ? "bg-primary" : "bg-line")} />
+        ))}
       </div>
+      <ContextBar />
     </header>
   );
 }
 
-export function TrustStrip() {
-  const { t } = useStore();
-  const items = [
-    { icon: ShieldCheck, label: t("trust"), c: service.security.text },
-    { icon: Eye, label: t("transparency"), c: service.internet.text },
-    { icon: Zap, label: t("speed"), c: service.tv.text },
-  ];
+/** Once the visitor has told us something: name, address and type, services. */
+function ContextBar() {
+  const { s, t, dispatch } = useStore();
+  const chosen = SERVICE_ORDER.filter((x) => s.services.includes(x));
+  if (s.stage < 1 || !chosen.length) return null;
+  const first = cleanText(s.name).split(" ")[0];
+  const item = "inline-flex shrink-0 items-center gap-1.5 text-sm text-ink";
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-      {items.map((i) => (
-        <li key={i.label} className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-ink">
-          <i.icon aria-hidden className="size-4" style={{ color: i.c }} strokeWidth={2.6} />
-          {i.label}
-        </li>
-      ))}
-    </ul>
+    <div className="border-t border-line bg-surface2">
+      <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-1.5 sm:px-6">
+        {/* relative: screen-reader-only labels are absolutely positioned and must be clipped here too */}
+        <ul className="relative flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
+          {nameOk(s.name) && (
+            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-ink max-sm:hidden">
+              <User aria-hidden className="size-4 text-muted" />
+              <span className="max-w-[9rem] truncate [overflow-wrap:normal]">{first}</span>
+            </li>
+          )}
+          {s.address && (
+            <li className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-ink">
+              <MapPin aria-hidden className="size-4 shrink-0 text-muted" />
+              <span className="min-w-0 max-w-[16rem] truncate [overflow-wrap:normal]">{s.address.line1}</span>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-xs font-semibold text-muted ring-1 ring-line">
+                {s.address.type === "business" ? <Building2 aria-hidden className="size-3" /> : <Home aria-hidden className="size-3" />}
+                <span className="max-lg:sr-only">{t(s.address.type === "business" ? "businessAddress" : "homeAddress")}</span>
+              </span>
+            </li>
+          )}
+          <li className={item}>
+            <span aria-hidden className="flex gap-0.5">
+              {chosen.map((x) => {
+                const Icon = SERVICE_ICON[x];
+                return (
+                  <span key={x} className="flex size-5 items-center justify-center rounded-sm" style={{ background: service[x].vivid, color: service[x].on }}>
+                    <Icon className="size-3" strokeWidth={2.5} />
+                  </span>
+                );
+              })}
+            </span>
+            <span className="max-md:sr-only">{chosen.map((x) => t(`svc_${x}`)).join(" + ")}</span>
+          </li>
+        </ul>
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "patch", patch: { modal: { kind: "callback", planId: null } } })}
+          className="hidden min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-link hover:bg-primary-soft md:inline-flex"
+        >
+          <PhoneCall aria-hidden className="size-4" />
+          {t("scheduleCallback")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            dispatch({ type: "reset" });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+        >
+          <RotateCcw aria-hidden className="size-4" />
+          <span className="max-sm:sr-only">{t("startOver")}</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
-/** Soft colour glows painted as cheap CSS gradients (no blur layers). */
-export function Glows() {
-  return <div className="glows" aria-hidden />;
+export function Footer() {
+  const { s, t } = useStore();
+  return (
+    <footer className="bg-surface2 text-ink">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+        <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Logo />
+              <span className="text-base font-bold tracking-tight">{t("brand")}</span>
+            </div>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">{t("disclaimer")}</p>
+          </div>
+          <nav aria-label={t("footerNav")} className="grid gap-8 sm:grid-cols-3">
+            {FOOTER_LINKS.map((g) => (
+              <div key={g.group}>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">{t(g.group)}</h2>
+                <ul className="mt-3 space-y-1">
+                  {g.links.map((l) => (
+                    <li key={l.slug}>
+                      <a href={siteUrl(l.slug, s.lang)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-ink hover:underline">
+                        {t(l.key)}
+                        <span className="sr-only"> {t("newTab")}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </div>
+        <p className="mt-10 border-t border-line pt-6 text-sm text-muted">© {new Date().getFullYear()} Assured Saving</p>
+      </div>
+    </footer>
+  );
 }
-

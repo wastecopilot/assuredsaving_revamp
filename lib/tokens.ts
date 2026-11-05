@@ -1,71 +1,76 @@
 /**
- * DESIGN TOKENS: the single source of truth.
- * Colour, type scale, spacing (8px grid), radius, shadow and motion live here.
- * layout.tsx writes them as CSS variables; Tailwind maps them to utilities in
- * app/globals.css; scripts/contrast.ts checks every text pair for WCAG AA.
+ * DESIGN TOKENS (single source of truth; checked by tests/design.test.ts and scripts/contrast.ts).
+ *
+ * Light, editorial, flat. Warm white page, near-black ink, one bright orange for actions
+ * (with ink text), and one solid colour per service. No gradients, glows or glass.
  */
 import type { ServiceId } from "@/data/catalog";
 
 export const color = {
-  ink: "#14123A", // 17.4:1 on canvas
-  muted: "#565377", // 7.1:1 on canvas
-  line: "#ECE7F6",
-  lineStrong: "#D9D2EC",
-  canvas: "#FFFCF7",
+  ink: "#141414",
+  muted: "#55575E",
+  line: "#E7E5E0",
+  lineStrong: "#CFCCC5",
+  canvas: "#FFFFFF",
   surface: "#FFFFFF",
-  surface2: "#F6F3FF",
-  primary: "#5B3DF5", // electric violet, white text 6.1:1
-  primaryStrong: "#4628DB",
-  primarySoft: "#EBE8FE",
-  danger: "#C1263A",
-  dangerSoft: "#FDECEE",
-  success: "#0A7B5F",
+  surface2: "#F6F5F2", // warm panel
+  primary: "#FF5A1F", // bright orange: buttons, selected states
+  primaryStrong: "#E84A10",
+  primarySoft: "#FFEEE6",
+  onPrimary: "#141414",
+  link: "#B53A0C", // orange-brown for text links on white (AA)
+  focus: "#141414",
+  danger: "#B42318",
+  dangerSoft: "#FEF3F2",
+  success: "#067647",
+  successSoft: "#ECFDF3",
+  warning: "#8A4B00",
+  warningSoft: "#FFF6E0",
+  // kept for components shared with the other build; same light values here
+  navy: "#141414",
+  navy2: "#F6F5F2",
+  navyLine: "#E7E5E0",
+  onDark: "#FFFFFF",
+  onDarkMuted: "#D5D3CE",
+  accent: "#FF5A1F",
 } as const;
 
-/**
- * One colour per service, carried through tiles, chips, stripes and badges.
- * vivid = fills and glows · text = AA-safe text shade · on = text on vivid · soft = tint
- */
-export const service: Record<ServiceId, { vivid: string; text: string; on: string; soft: string }> = {
-  internet: { vivid: "#1F6BFF", text: "#1C5FE3", on: "#FFFFFF", soft: "#E4EDFF" },
-  tv: { vivid: "#FF5C4D", text: "#B84237", on: "#14123A", soft: "#FFEBEA" },
-  mobile: { vivid: "#A23DF5", text: "#9036DA", on: "#FFFFFF", soft: "#F4E8FE" },
-  security: { vivid: "#10C79A", text: "#0A7B5F", on: "#14123A", soft: "#E2F8F3" },
-  phone: { vivid: "#FFC02E", text: "#8C6A19", on: "#14123A", soft: "#FFF7E6" },
+/** One solid colour per service: vivid = fill · on = text on fill · text = AA text on white · soft = tint. */
+export const service: Record<ServiceId, { vivid: string; on: string; text: string; soft: string }> = {
+  internet: { vivid: "#2962F2", on: "#FFFFFF", text: "#1F4FD1", soft: "#EBF1FF" },
+  tv: { vivid: "#FF3D71", on: "#141414", text: "#C2124A", soft: "#FFECF1" },
+  phone: { vivid: "#7A3FF2", on: "#FFFFFF", text: "#6229D6", soft: "#F2ECFF" },
+  mobile: { vivid: "#FFC21A", on: "#141414", text: "#8A5A00", soft: "#FFF7DC" },
+  security: { vivid: "#12B76A", on: "#141414", text: "#067647", soft: "#E8F8F0" },
 };
 
-/** Brand gradient (violet to electric blue): white text passes AA at both ends. */
-export const gradient = { from: "#5B3DF5", to: "#1F6BFF", text: "#FFFFFF" };
-
-/** Type scale in rem with line heights. Display uses the heading font. */
 export const type = {
   xs: ["0.75rem", "1rem"],
   sm: ["0.875rem", "1.375rem"],
-  base: ["1rem", "1.625rem"],
+  base: ["1rem", "1.5rem"],
   lg: ["1.125rem", "1.75rem"],
-  xl: ["1.375rem", "1.875rem"],
-  "2xl": ["1.75rem", "2.25rem"],
-  "3xl": ["2.25rem", "2.625rem"],
-  "4xl": ["3rem", "3.25rem"],
-  "5xl": ["4rem", "4.125rem"],
+  xl: ["1.25rem", "1.75rem"],
+  "2xl": ["1.5rem", "2rem"],
+  "3xl": ["2rem", "2.375rem"],
+  "4xl": ["2.75rem", "1.05"],
+  "5xl": ["3.75rem", "1"],
 } as const;
 
-/** 8px grid. Tailwind's spacing base is set to 4px; layouts use even steps. */
-export const space = { unit: 8 };
-export const radius = { sm: "12px", md: "16px", lg: "24px", xl: "32px", full: "9999px" };
+export const space = { unit: 4 };
+export const radius = { sm: "4px", md: "6px", lg: "8px", full: "9999px" };
 export const shadow = {
-  sm: "0 1px 2px rgb(20 18 58 / 0.05), 0 4px 12px -2px rgb(20 18 58 / 0.06)",
-  md: "0 2px 4px rgb(20 18 58 / 0.04), 0 16px 36px -10px rgb(20 18 58 / 0.14)",
-  glow: "0 18px 40px -14px rgb(91 61 245 / 0.45)",
-  overlay: "0 24px 80px -12px rgb(20 18 58 / 0.35)",
+  sm: "0 1px 2px rgb(20 20 20 / 0.05)",
+  md: "0 1px 2px rgb(20 20 20 / 0.06)",
+  lg: "0 8px 24px -12px rgb(20 20 20 / 0.18)",
+  overlay: "0 24px 48px -16px rgb(20 20 20 / 0.28)",
 };
 export const motion = {
-  fast: 0.15,
-  base: 0.25,
-  slow: 0.45,
-  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-  spring: { type: "spring" as const, stiffness: 520, damping: 26 },
-  soft: { type: "spring" as const, stiffness: 260, damping: 30 },
+  fast: 0.12,
+  base: 0.2,
+  slow: 0.32,
+  ease: [0.2, 0, 0, 1] as [number, number, number, number],
+  spring: { type: "spring" as const, stiffness: 500, damping: 40 },
+  soft: { type: "spring" as const, stiffness: 320, damping: 36 },
 };
 
 export function contrastPairs(): [string, string, string][] {
@@ -73,31 +78,31 @@ export function contrastPairs(): [string, string, string][] {
     [color.ink, color.canvas, "ink/canvas"],
     [color.ink, color.surface2, "ink/surface2"],
     [color.muted, color.canvas, "muted/canvas"],
-    [color.muted, color.surface, "muted/surface"],
     [color.muted, color.surface2, "muted/surface2"],
-    [color.muted, color.primarySoft, "muted/primarySoft"],
-    [color.primary, color.surface, "primary text/surface"],
-    [color.primary, color.primarySoft, "primary text/primarySoft"],
-    ["#FFFFFF", color.primary, "white/primary"],
-    ["#FFFFFF", color.primaryStrong, "white/primaryStrong"],
-    [color.danger, color.surface, "danger/surface"],
+    [color.onPrimary, color.primary, "ink on orange"],
+    [color.onPrimary, color.primaryStrong, "ink on orange hover"],
+    [color.ink, color.primarySoft, "ink/primarySoft"],
+    [color.link, color.canvas, "link/canvas"],
+    [color.link, color.surface2, "link/surface2"],
+    [color.link, color.primarySoft, "link/primarySoft"],
+    [color.danger, color.canvas, "danger/canvas"],
     [color.danger, color.dangerSoft, "danger/dangerSoft"],
-    [color.success, color.surface, "success/surface"],
-    [gradient.text, gradient.from, "white/gradient start"],
-    [gradient.text, gradient.to, "white/gradient end"],
+    [color.success, color.canvas, "success/canvas"],
+    [color.success, color.successSoft, "success/successSoft"],
+    [color.warning, color.warningSoft, "warning/warningSoft"],
+    [color.onDark, color.ink, "white/ink"],
   ];
   for (const [k, c] of Object.entries(service)) {
-    p.push([c.text, color.surface, `${k} text/surface`], [c.text, color.canvas, `${k} text/canvas`], [c.text, c.soft, `${k} text/soft`], [c.on, c.vivid, `${k} on/vivid`]);
+    p.push([c.on, c.vivid, `${k} on/vivid`], [c.text, color.canvas, `${k} text/canvas`], [c.text, c.soft, `${k} text/soft`]);
   }
   return p;
 }
 
 export function cssVariables(): string {
   const v: string[] = [];
-  const kebab = (s: string) => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+  const kebab = (s: string) => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`).replace(/(\D)(\d)/, "$1-$2");
   for (const [k, c] of Object.entries(color)) v.push(`--${kebab(k)}:${c}`);
-  for (const [k, c] of Object.entries(service)) v.push(`--${k}:${c.vivid}`, `--${k}-text:${c.text}`, `--${k}-on:${c.on}`, `--${k}-soft:${c.soft}`);
-  v.push(`--grad-from:${gradient.from}`, `--grad-to:${gradient.to}`);
+  for (const [k, c] of Object.entries(service)) v.push(`--${k}:${c.vivid}`, `--${k}-on:${c.on}`, `--${k}-text:${c.text}`, `--${k}-soft:${c.soft}`);
   for (const [k, s] of Object.entries(shadow)) v.push(`--sh-${k}:${s}`);
   return `:root{${v.join(";")}}`;
 }

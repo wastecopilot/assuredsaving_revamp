@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Inter } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
 import { cssVariables } from "@/lib/tokens";
+import { translate } from "@/lib/i18n";
 import "./globals.css";
 
-const heading = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-heading", weight: ["600", "700", "800"], display: "swap" });
-const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const instrument = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
 
-const title = "Assured Saving | Let's get the right deal";
-const description =
-  "Pick your services, enter your address and compare internet, TV, mobile, security and home phone plans with every required fee included. Design preview with sample data.";
+/* Same page title as https://www.assuredsaving.com/ */
+const title = "Assured Saving | Agentic AI Assistant";
+const description = translate("en", "heroDescription");
 
 export const metadata: Metadata = {
   title,
@@ -17,11 +17,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary", title, description },
 };
 
-export const viewport: Viewport = { themeColor: "#FFFCF7", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#FFFFFF", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${heading.variable} ${body.variable}`}>
+    <html lang="en" className={instrument.variable}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: cssVariables() }} />
       </head>

@@ -1,18 +1,36 @@
-# Assured Saving: bright one-pager revamp (design preview)
+# Assured Saving: one-pager UI/UX revamp (design preview)
 
-A redesign of the Assured Saving one-pager (https://assuredsaving.vercel.app/). It has the same sections, in the same order, with the same content and flow:
+A redesign of the Assured Saving quote flow, built as one page. Wording and rules follow
+https://www.assuredsaving.com/; the visual design and UX are new. Everything runs on mocked
+sample data: nothing calls a real service, places a call or sends a text.
 
-1. Services and bundles
-2. Name and address
-3. Usage
-4. TV setup (when TV is chosen)
-5. Live scan
-6. Results
-7. Plan details and the Aria callback
+## Design
 
-The visual design and the UX are new: a light, bright and vibrant look with honest pricing logic.
+A light, editorial product page with flat colour only (no gradients, glows or glass).
 
-Everything runs on mocked sample data (`data/sample.ts` and `data/catalog.ts`). Nothing calls a real service, places a call or sends a text. The research and the fix plan are in [`docs/audit.md`](docs/audit.md).
+- **Step 1 follows the official home page.** It has:
+  - the official headline "Find the Best Internet";
+  - the five services and the official bundle shortcuts;
+  - "Search USA address" with "Check Availability".
+- **Later steps are full-width bands.** On desktop each band has its heading in a left column and the fields on the right.
+  - **Name:** "Please enter your full name."
+  - **Usage:** "How do you use the internet?", only with Internet.
+  - **TV needs:** only with TV.
+  - **Scan:** "Assured Saving Agent — Live".
+  - **Results:** plans as comparison rows (who and what, the facts, the price, actions), with the top pick marked by an orange bar.
+- **Colour.** Warm white page, near-black ink, one bright orange for actions (with ink text), and one solid colour per service: Internet blue, TV pink, Landline violet, Mobile yellow, Home Security green.
+- **Type and shape.** Instrument Sans, corners of 8px or less, 1px borders, 44px touch targets.
+- **Accessibility.** Every text colour pair passes WCAG AA, and reduced motion is respected.
+- **Header.** Only the current step's official name (no step numbers), ENG | ESP and US Only.
+
+## Official wording and rules
+
+| Area | How |
+| --- | --- |
+| Wording | Every visible string (English and Spanish) is copied word for word from the official site into `data/official-copy.json`. `lib/copy-sources.ts` maps UI keys to it, and `npm run copy` writes only the used strings to `lib/copy.gen.json`. Tests fail on any non-official text. |
+| Services | Any one service on its own; combinations only Internet + TV, + Landline, + Mobile, or all four; Home Security always alone. Recorded from the live site (`lib/selection.ts`). |
+| Business addresses | Official rule: only Internet or Internet + TV Bundle. Other selections get the official chooser. |
+| Callback | Official "Schedule AI Callback" form, consent text and calling window (8am - 9pm). |
 
 ## Run it
 
@@ -24,65 +42,35 @@ npm run dev
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Development server |
-| `npm run build`, then `npm start` | Production build and server |
-| `npm run typecheck` / `npm run lint` | TypeScript and ESLint |
-| `npm run contrast` | Checks every text colour pair in `lib/tokens.ts` against WCAG AA |
-| `npm run verify:data` | Checks the price maths, label rules, sort order, fallback notices and "Why this plan" text for every plan, in English and Spanish, for home and business |
-| `npm run check` | All of the above, then a production build |
+| `npm run build`, then `npm start` | Production build (runs `npm run copy` first) and server |
+| `npm test` | All tests (Vitest + Testing Library + axe-core) |
+| `npm run contrast` | WCAG AA check of every colour pair |
+| `npm run check` | Typecheck, lint, contrast, tests, production build |
 
-## Deploy to Vercel (to share a link)
+## How it was refined
 
-1. Push this folder to GitHub.
-2. Open https://vercel.com/new and import the repository. If the repository contains other folders, set **Root Directory** to `assuredsaving-onepager-revamp`.
-3. Keep the defaults (Next.js). No environment variables are needed.
-4. Click **Deploy** and share the `https://<project>.vercel.app` link.
+See `docs/quality.md` for the full report.
 
-Or from a terminal: `npm i -g vercel`, then `vercel`, then `vercel --prod`.
+1. **Design-driven development (UI/UX TDD).** The design rules were written as tests (`tests/design.test.ts`) before the UI was built, and the UI was built until they passed. The rules:
+   - flat colour only;
+   - the colour roles;
+   - AA contrast;
+   - 44px targets;
+   - corner sizes;
+   - one typeface;
+   - the official home-page structure;
+   - no step numbers.
+2. **UI component unit tests** (`tests/components.test.tsx`): buttons, fields, checkbox, chips, slider, segmented control, modal (focus trap, Escape, focus return), service tiles, the address combobox and plan rows.
+3. **UI/UX integration tests** (`tests/flow.test.tsx`, `tests/callback.test.tsx`):
+   - the whole page is driven like a visitor;
+   - axe-core accessibility checks run at each step;
+   - every visible text node is checked against the official copy.
+4. **UX pen tester (empathic attacker).** A separate reviewer walked the app as seven personas and reported friction. The points were discussed and improved.
+5. **Simulated users:**
+   - 20,000 model-level journeys run in the test suite;
+   - 1,000 real-browser sessions run with `scripts/simulate.cjs`.
 
-## UX fixes
+## Deploy to Vercel
 
-| Problem in the current one-pager | Fix |
-| --- | --- |
-| The same plans appear in "Top picks" and again in "All bundles" | Top picks are ranks 1 to 3. "See all" lists only the rest. A carrier filter shows one list. Each plan appears once. |
-| Hand-written plan notes drift from the numbers ("$15/mo savings" next to "$14.98") | "Why this plan" is generated from each plan's own fields. A script checks every plan. |
-| Hard-coded BEST VALUE, PREMIUM and ALSO CONSIDER labels | Computed labels: **Most Affordable**, **Best Value** and **Fastest**, each on one plan at most, with the rules shown on the page. No "Premium" or "Most Popular" claims. |
-| Ranks shown out of order (#1, #3, #2) | Rank is the position in the all-in price sort. |
-| Headline price leaves out the Broadcast TV fee | The all-in monthly price (plan + required fees − promo) is big. The price after the promo is shown at the same size. The fee breakdown is in Details. |
-| "Save $X vs separate" shown without knowing your bill | Savings appear only after you enter your bill in "Compare with my bill". |
-| Fixed "96% Reliability" bar | Removed. Each plan has a plain technology note instead (fiber, cable, 5G, DSL, satellite lag and weather, data caps). |
-| Home wording on business addresses, and business-only usage tiles for everyone | Home and business each get their own usage tiles and plan wording. Static IP and support details show for business. |
-| "Call for pricing" with no explanation | A dedicated card explains why there's no price and offers "Get a quote". These plans are listed last and earn no labels. |
-| A requested bundle silently downgraded | A clear notice says what's missing and what is shown instead. |
-| Consent implied by a dense paragraph, and "8AM–9PM" doesn't match calling hours | The callback runs in steps: details, consent (AI-call box **unchecked**, optional SMS consent separate), phone verification (mocked), then call now or schedule. Times are limited to Mon to Sat, 9 AM to 8 PM in the chosen time zone. Errors are inline, and a do-not-call state offers a support route. |
-| Tiny, letter-spaced, low-contrast text | Light theme, bigger type, and AA-checked colours. |
-| A real person's name and email pre-filled | The fields start empty. |
-| Visitor has to know whether their address is home or business | Detected automatically: each suggestion carries its type, shown as a label on the "Address found" card. There is no manual switch. |
-| Sponsored ad slot during the scan | Removed. |
-
-## Design system
-
-- **Tokens:** everything lives in `lib/tokens.ts`: colours (an electric-violet primary, plus blue, coral, violet, mint and sunny yellow, one per service), type scale, an 8px grid, radius, shadows and motion. `layout.tsx` writes them as CSS variables.
-- **Fonts:** Bricolage Grotesque for display and Inter for body, through next/font.
-- **Components:** in `components/ui`: Button, Input, Select, Checkbox, SegmentedControl, Badge, Chip, Slider, Skeleton, EmptyState, Modal, Drawer and Toast. PlanCard is in `components/sections`.
-- **Motion:** the hero uses CSS (tile pop, rise). The later sections load on demand with Framer Motion. All motion respects `prefers-reduced-motion`.
-- **ENG/ESP:** a dictionary toggle in `lib/i18n.ts`.
-
-## Demo tips
-
-### Address flow
-
-The address flow is the same as the original one-pager (`wastecopilot/assuredsaving`, `getAddressSuggestions` and `AddressVerification`), ported into `lib/address.ts` and `components/sections/Steps.tsx`:
-
-1. Enter your name. The address search appears once the name is valid.
-2. Type any part of an address. The five fixed sample addresses match first. If fewer than 3 match, suggestions are built from what you typed, using the same five sample locations. A bare house number such as `658` goes in front of the sample street.
-3. Each suggestion carries its own type, **residential** or **business**. Typed text with words like Suite, Floor, Office, Plaza, Center, Commerce or Business is always business.
-4. Picking a suggestion (click, or Enter for the first one) verifies it, shows the "Address found" card with the detected type, and unlocks the next section straight away.
-5. Editing or clearing a verified address folds the sections below it back up.
-
-This is mocked, with no real lookup. A live site would get the address and its type from an address service.
-
-Try `658`, `Fannin` or `500 Main St Suite 200`. Choose **Internet + TV + Mobile** to see the "bundle not available" notice.
-
-In the callback:
-- Any 6-digit code verifies, and `000000` shows the wrong-code message.
-- A mobile number ending in `0000` shows the do-not-call message.
+Import the repository at https://vercel.com/new with the defaults (Next.js). No environment variables.
+Security headers are set in `next.config.ts`.

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Values come from lib/tokens.ts, written as CSS variables in layout.tsx */
+/* Values come from lib/tokens.ts, written as CSS variables in layout.tsx. Flat colours only. */
 @theme inline {
   --color-ink: var(--ink);
   --color-muted: var(--muted);
@@ -8,50 +8,61 @@
   --color-line-strong: var(--line-strong);
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
-  --color-surface2: var(--surface2);
+  --color-surface2: var(--surface-2);
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
   --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-navy: var(--navy);
+  --color-navy2: var(--navy-2);
+  --color-navy-line: var(--navy-line);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-accent: var(--accent);
   --color-internet: var(--internet);
   --color-internet-text: var(--internet-text);
   --color-internet-soft: var(--internet-soft);
   --color-tv: var(--tv);
   --color-tv-text: var(--tv-text);
   --color-tv-soft: var(--tv-soft);
+  --color-phone: var(--phone);
+  --color-phone-text: var(--phone-text);
+  --color-phone-soft: var(--phone-soft);
   --color-mobile: var(--mobile);
   --color-mobile-text: var(--mobile-text);
   --color-mobile-soft: var(--mobile-soft);
   --color-security: var(--security);
   --color-security-text: var(--security-text);
   --color-security-soft: var(--security-soft);
-  --color-phone: var(--phone);
-  --color-phone-text: var(--phone-text);
-  --color-phone-soft: var(--phone-soft);
 
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 
   --shadow-sm: var(--sh-sm);
   --shadow-md: var(--sh-md);
-  --shadow-glow: var(--sh-glow);
+  --shadow-lg: var(--sh-lg);
   --shadow-overlay: var(--sh-overlay);
 }
 
 @theme {
   --spacing: 4px;
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 96px;
+    scroll-padding-top: 120px;
     background: var(--canvas);
   }
   body {
@@ -59,58 +70,39 @@
     background: var(--canvas);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Very long unbroken input (names, addresses) must never widen the page. */
+    overflow-wrap: anywhere;
   }
   h1, h2, h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
   :focus-visible {
-    outline: 3px solid var(--primary);
-    outline-offset: 3px;
-    border-radius: 12px;
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .on-dark :focus-visible {
+    outline-color: #ffffff;
   }
   ::selection {
     background: var(--primary-soft);
   }
+  h1, h2 {
+    letter-spacing: -0.03em;
+  }
 }
 
-@utility bg-brand {
-  background-image: linear-gradient(115deg, var(--grad-from), var(--grad-to));
-}
-@utility text-brand {
-  background-image: linear-gradient(100deg, var(--grad-from), var(--grad-to));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Soft colour glows behind the page: plain gradients, cheap to paint */
-.glows {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(40rem 40rem at -5% -10%, rgb(91 61 245 / 0.14), transparent 60%),
-    radial-gradient(34rem 34rem at 105% 10%, rgb(255 92 77 / 0.12), transparent 60%),
-    radial-gradient(30rem 30rem at 40% 75%, rgb(16 199 154 / 0.1), transparent 60%),
-    radial-gradient(26rem 26rem at 95% 105%, rgb(255 192 46 / 0.16), transparent 60%);
-}
+/* Small CSS motion for step 1 (no animation library on first load) */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 360ms cubic-bezier(0.2, 0, 0, 1) both; }
+.press { transition: transform 120ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease; }
+.press:active { transform: scale(0.98); }
 
-/* Lightweight CSS motion for the hero (no animation library on first load) */
-@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.05); } 100% { transform: scale(1); } }
-@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-.tile-pop { transition: transform 150ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease; }
-.tile-pop:active { transform: scale(0.95); }
-.tile-pop[aria-pressed="true"] { animation: pop 320ms cubic-bezier(0.22, 1, 0.36, 1); }
-.pop { animation: pop 320ms cubic-bezier(0.22, 1, 0.36, 1); }
-.rise { animation: rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-/* Range slider */
+/* Range slider: flat track, solid fill */
 .range {
   -webkit-appearance: none;
   appearance: none;
@@ -120,53 +112,43 @@
   cursor: pointer;
 }
 .range::-webkit-slider-runnable-track {
-  height: 10px;
+  height: 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--from, var(--grad-from)) 0%, var(--to, var(--grad-to)) var(--pct), var(--line) var(--pct));
+  background: linear-gradient(90deg, var(--fill, var(--primary)) var(--pct), var(--line) var(--pct));
 }
 .range::-moz-range-track {
-  height: 10px;
+  height: 6px;
   border-radius: 999px;
   background: var(--line);
 }
 .range::-moz-range-progress {
-  height: 10px;
+  height: 6px;
   border-radius: 999px;
-  background: var(--primary);
+  background: var(--fill, var(--primary));
 }
 .range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 28px;
-  height: 28px;
-  margin-top: -9px;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
   border-radius: 999px;
   background: #fff;
-  border: 5px solid var(--primary);
-  box-shadow: 0 4px 12px rgb(20 18 58 / 0.25);
+  border: 2px solid var(--fill, var(--primary));
+  box-shadow: var(--sh-md);
 }
 .range::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 999px;
   background: #fff;
-  border: 5px solid var(--primary);
+  border: 2px solid var(--fill, var(--primary));
 }
 .range:focus-visible {
   outline: none;
 }
 .range:focus-visible::-webkit-slider-thumb {
-  outline: 3px solid var(--primary);
-  outline-offset: 3px;
-}
-
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
-}
-.skeleton {
-  background: linear-gradient(90deg, var(--surface2) 25%, #ece7fb 50%, var(--surface2) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

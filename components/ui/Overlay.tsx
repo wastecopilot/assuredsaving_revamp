@@ -73,7 +73,7 @@ function Shell({ variant, open, onClose, title, closeLabel, description, header,
     <AnimatePresence>
       {open && (
         <div className={clsx("fixed inset-0 z-50 flex items-end", drawer ? "sm:items-stretch sm:justify-end" : "justify-center sm:items-center sm:p-6")}>
-          <motion.div aria-hidden className="absolute inset-0 bg-ink/45 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+          <motion.div aria-hidden className="absolute inset-0 bg-ink/50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div
             ref={panel}
             role="dialog"
@@ -82,18 +82,18 @@ function Shell({ variant, open, onClose, title, closeLabel, description, header,
             aria-describedby={description ? descId : undefined}
             className={clsx(
               "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-xl bg-surface shadow-overlay",
-              drawer ? "sm:max-h-none sm:max-w-xl sm:rounded-none sm:rounded-l-xl" : clsx("sm:rounded-xl", wide ? "sm:max-w-3xl" : "sm:max-w-lg"),
+              drawer ? "sm:max-h-none sm:max-w-[560px] sm:rounded-none sm:rounded-l-xl" : clsx("sm:rounded-xl", wide ? "sm:max-w-3xl" : "sm:max-w-lg"),
             )}
             initial={reduce ? { opacity: 0 } : drawer ? { x: 60, opacity: 0 } : { y: 40, opacity: 0, scale: 0.98 }}
             animate={{ x: 0, y: 0, opacity: 1, scale: 1 }}
             exit={reduce ? { opacity: 0 } : drawer ? { x: 60, opacity: 0 } : { y: 30, opacity: 0 }}
             transition={reduce ? { duration: 0.1 } : { type: "spring", stiffness: 360, damping: 34 }}
           >
-            <div aria-hidden className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-line-strong sm:hidden" />
+                        <div aria-hidden className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-line-strong sm:hidden" />
             <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-4 sm:pt-6">
               <div className="min-w-0">
                 {header}
-                <h2 id={titleId} className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+                <h2 id={titleId} className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
                   {title}
                 </h2>
                 {description && (
@@ -106,7 +106,7 @@ function Shell({ variant, open, onClose, title, closeLabel, description, header,
                 <X aria-hidden className="size-5" />
               </button>
             </div>
-            <div tabIndex={0} className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 focus-visible:outline-offset-[-3px]">
+            <div tabIndex={0} className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 focus-visible:outline-offset-[-3px] min-[360px]:px-6">
               {children}
             </div>
             {footer && <div className="border-t border-line bg-surface px-6 py-4">{footer}</div>}
