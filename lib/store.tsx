@@ -96,7 +96,8 @@ export function reducer(s: State, a: Action): State {
       if (s.modal.kind) return { ...s, modal: { ...s.modal, kind: null } };
       if (s.stage <= 0) return s;
       let t = s.stage - 1;
-      while (t > 0 && !applies(s, t)) t--;
+      // The scan runs by itself, so Back never lands on it (it would loop straight back to results).
+      while (t > 0 && (!applies(s, t) || t === STAGE.scan)) t--;
       // Leaving results or scan re-runs the scan next time.
       return { ...s, stage: t, scanDone: t >= STAGE.results ? s.scanDone : false };
     }
@@ -104,7 +105,7 @@ export function reducer(s: State, a: Action): State {
       // Browser Back: return to an earlier step (never forward), skipping steps that don't apply.
       if (s.modal.kind) return { ...s, modal: { ...s.modal, kind: null } };
       let t = Math.max(0, Math.min(a.to, s.stage));
-      while (t > 0 && !applies(s, t)) t--;
+      while (t > 0 && (!applies(s, t) || (t === STAGE.scan && t < s.stage))) t--;
       return t === s.stage ? s : { ...s, stage: t, scanDone: t >= STAGE.results ? s.scanDone : false };
     }
     case "reset":
@@ -157,7 +158,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // already typing in a field (never steal focus mid-word).
       window.setTimeout(() => {
         const a = document.activeElement;
-        if (a instanceof HTMLInputElement || a instanceof HTMLTextAreaElement || a instanceof HTMLSelectElement) return;
+        // Never steal focus from a field inside the new step; a field in the step just
+        // submitted (Enter in the address or name) hands focus on to the new step.
+        if ((a instanceof HTMLInputElement || a instanceof HTMLTextAreaElement || a instanceof HTMLSelectElement) && el.contains(a)) return;
         el.querySelector<HTMLElement>("h2[tabindex='-1'], h1[tabindex='-1']")?.focus({ preventScroll: true });
       }, reduce ? 0 : 450);
     };
@@ -198,7 +201,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
    */
   const lastStage = useRef(s.stage);
   useEffect(() => {
-    if (s.stage > lastStage.current) window.history.pushState({ asStage: s.stage }, "");
+    // Results replace the scan's entry, so browser Back from results skips the scan.
+    if (s.stage > lastStage.current) {
+      if (lastStage.current === STAGE.scan) window.history.replaceState({ asStage: s.stage }, "");
+      else window.history.pushState({ asStage: s.stage }, "");
+    }
     lastStage.current = s.stage;
   }, [s.stage]);
   const modalOpen = !!s.modal.kind;

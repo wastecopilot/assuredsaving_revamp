@@ -269,6 +269,12 @@ describe("full flow to results", () => {
 
     auditText();
     await noAxeViolations();
+
+    // Back from results skips the automatic scan (no loop back to results)
+    await user.click(screen.getByRole("button", { name: "Back", exact: true } as never));
+    await waitFor(() => expect(screen.queryByRole("heading", { name: /plans available/ })).toBeNull());
+    expect(screen.queryByText("Assured Saving Agent — Live")).toBeNull();
+    expect(screen.getByRole("button", { name: "Find my bundle" })).toBeInTheDocument();
   });
 });
 

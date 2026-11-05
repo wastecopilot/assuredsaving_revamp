@@ -67,7 +67,7 @@ export function ResultsSection() {
           <span className="rounded-sm bg-ink px-2 py-0.5 text-xs font-semibold text-white">{label}</span>
           {biz && <span className="rounded-sm bg-surface2 px-2 py-0.5 text-xs font-semibold text-muted ring-1 ring-line">{t("businessPlansBadge")}</span>}
         </p>
-        <h2 id="section-results-h" tabIndex={-1} className="mt-3 text-[2rem] font-bold leading-tight text-ink outline-none sm:text-[2.5rem]" aria-live="polite">
+        <h2 id="section-results-h" tabIndex={-1} className="mt-3 text-[2.25rem] font-black leading-[1.05] tracking-[-0.035em] text-ink outline-none sm:text-[3rem]" aria-live="polite">
           {(filtered ?? plans).length} {t((filtered ?? plans).length === 1 ? "planAvailable" : "plansAvailable")}
         </h2>
         {s.address && (

@@ -31,6 +31,10 @@ export function CallbackModal() {
   const [phone, setPhone] = useState(s.contact.phone);
   const [verifiedFor, setVerifiedFor] = useState<string | null>(s.contact.verifiedFor);
   const [otp, setOtp] = useState<Otp>(() => (s.contact.verifiedFor && s.contact.verifiedFor === nationalDigits(s.contact.phone) ? "verified" : "idle"));
+  // Send Code is replaced by the code field: move focus there, never to the page body
+  useEffect(() => {
+    if (otp === "sent" && !document.activeElement?.closest("#cb-code")) document.getElementById("cb-code")?.focus();
+  }, [otp]);
   const [booked, setBooked] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [tries, setTries] = useState(0);

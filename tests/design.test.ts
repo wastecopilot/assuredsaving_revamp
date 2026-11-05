@@ -1,15 +1,19 @@
 /**
- * DESIGN SPEC (design-driven development). Written before the UI was built; the UI was
- * then built until these passed. They encode the agreed design rules so they can't drift:
+ * DESIGN SPEC (design-driven development): the Assured Saving brand system. Written before
+ * the redesign; the UI was rebuilt until these passed. The look is taken from the brand's own
+ * signatures on assuredsaving.com, made flat and bright, instead of a generic template:
  *
  * 1. Flat colour only: no gradients, glows, blur/glass, or decorative shadows.
- * 2. One bright action colour (orange, ink text) and one solid colour per service.
+ * 2. Brand colours: midnight navy stage, the brand mint for the main action (ink text),
+ *    and the official service colours (cyan, fuchsia, blue, amber, green).
  * 3. Every text colour pair passes WCAG AA.
- * 4. Interactive controls are at least 44px tall (min-h-11 or more).
- * 5. Sharp, consistent shape language: radius 8px or less, no pill shapes on cards.
- * 6. Instrument Sans, one family.
- * 7. Official wording only (see copy.test.ts), and the official home-page structure:
- *    headline, five services, address search and "Check Availability" on the first screen.
+ * 4. Interactive controls are at least 44px tall.
+ * 5. Shape: 14px cards, pill search and actions; nothing oversized.
+ * 6. Type: Inter (the brand's face), with the brand's light/black weight contrast and
+ *    letter-spaced capitals for labels.
+ * 7. Brand marks: the "Assured" (light) / "Saving" (black) wordmark with the sparkle, the
+ *    US-flag pill; no stock shield logo, no highlighter marker under the headline.
+ * 8. Official wording only (copy.test.ts) and the official home-page structure.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -45,18 +49,20 @@ describe("1. flat colour only", () => {
   });
 });
 
-describe("2. colour roles", () => {
-  it("has one bright orange action colour with ink text", () => {
-    expect(color.primary.toUpperCase()).toBe("#FF5A1F");
+describe("2. brand colours", () => {
+  it("uses the brand mint for the main action, with ink text", () => {
+    expect(color.primary.toUpperCase()).toBe("#00D492");
     expect(color.onPrimary.toUpperCase()).toBe(color.ink.toUpperCase());
   });
-  it("gives each of the five services its own solid colour", () => {
+  it("sets step 1 on a midnight-navy stage, with light content sections below", () => {
+    expect(color.navy.toUpperCase()).toBe("#0B1430");
+    expect(ratio("#FFFFFF", color.navy)).toBeGreaterThanOrEqual(15);
+    expect(ratio(color.canvas, "#FFFFFF")).toBeLessThan(1.1);
+  });
+  it("gives each service its official colour, all distinct from the mint", () => {
     const vivid = Object.values(service).map((c) => c.vivid.toUpperCase());
     expect(new Set(vivid).size).toBe(5);
     expect(vivid).not.toContain(color.primary.toUpperCase());
-  });
-  it("is a light design (not a navy stage)", () => {
-    expect(ratio(color.canvas, "#FFFFFF")).toBeLessThan(1.1);
   });
 });
 
@@ -81,23 +87,49 @@ describe("4. touch targets", () => {
 });
 
 describe("5. shape", () => {
-  it("keeps radii at 8px or less", () => {
-    for (const r of [radius.sm, radius.md, radius.lg]) expect(parseInt(r)).toBeLessThanOrEqual(8);
+  it("keeps card radii at 14px or less", () => {
+    for (const r of [radius.sm, radius.md, radius.lg]) expect(parseInt(r)).toBeLessThanOrEqual(14);
   });
   it.each(SOURCE.filter((x) => x.f.endsWith(".tsx")))("$f uses no oversized rounding", ({ src }) => {
-    expect(src).not.toMatch(/rounded-(2xl|3xl|\[(1[2-9]|[2-9]\d)px\])/);
+    expect(src).not.toMatch(/rounded-(2xl|3xl|\[(1[5-9]|[2-9]\d)px\])/);
   });
 });
 
 describe("6. type", () => {
-  it("uses Instrument Sans only", () => {
+  it("uses Inter, the brand's face, with light and black weights", () => {
     const layout = readFileSync(join(ROOT, "app/layout.tsx"), "utf8");
-    expect(layout).toMatch(/Instrument_Sans/);
-    expect(layout).not.toMatch(/Public_Sans|Plus_Jakarta|Geist|Inter\b/);
+    expect(layout).toMatch(/Inter\(/);
+    expect(layout).toMatch(/"300"/);
+    expect(layout).toMatch(/"900"/);
+    expect(layout).not.toMatch(/Instrument_Sans|Public_Sans|Plus_Jakarta|Geist|Manrope|Figtree/);
+  });
+  it("labels with letter-spaced capitals (the brand's caps style)", () => {
+    const css = readFileSync(join(ROOT, "app/globals.css"), "utf8");
+    expect(css).toMatch(/@utility caps/);
   });
 });
 
-describe("7. official home-page structure", () => {
+describe("6b. brand marks", () => {
+  const shell = readFileSync(join(ROOT, "components/sections/Shell.tsx"), "utf8");
+  const hero = readFileSync(join(ROOT, "components/sections/Hero.tsx"), "utf8");
+  it("uses the Assured / Saving wordmark with the sparkle and the US-flag pill", () => {
+    expect(shell).toMatch(/export function Wordmark/);
+    expect(shell).toMatch(/font-light[^"]*"[^>]*>\s*Assured|Assured<\/span>/);
+    expect(shell).toMatch(/Sparkle/);
+    expect(shell).toMatch(/UsFlag/);
+  });
+  it("has no stock shield logo and no highlighter marker", () => {
+    for (const { src, f } of SOURCE) expect(src, f).not.toMatch(/M16 6\.5 8\.5 9\.4/);
+    expect(hero).not.toMatch(/h-\[0\.28em\] bg-primary/);
+  });
+  it("sets the headline in the brand's light/black contrast on the navy stage", () => {
+    expect(hero).toMatch(/bg-navy/);
+    expect(hero).toMatch(/font-light/);
+    expect(hero).toMatch(/font-black/);
+  });
+});
+
+describe("8. official home-page structure", () => {
   it("puts the official headline, services, address search and Check Availability in step 1", () => {
     const hero = ["Hero.tsx", "AddressSearch.tsx"].map((f) => readFileSync(join(ROOT, "components/sections", f), "utf8")).join("\n");
     for (const k of ['"heroTitle"', '"heroTitleHighlight"', '"addrSearchLabel"', '"checkAvailability"', '"smartMatch"', '"heroDescription"']) expect(hero).toContain(k);

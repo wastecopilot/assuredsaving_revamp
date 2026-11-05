@@ -1,10 +1,9 @@
 "use client";
 import { ArrowRight, Briefcase, Check, CircleCheck, CloudUpload, Gamepad2, Globe, Laptop, MonitorPlay, Smartphone, User, Video, Wifi, WifiOff } from "lucide-react";
 import clsx from "clsx";
-import { DEVICES, GENRES, PACKS, USAGE, type ServiceId } from "@/data/catalog";
+import { DEVICES, GENRES, PACKS, USAGE } from "@/data/catalog";
 import { cleanText, nameOk } from "@/lib/schedule";
 import { STAGE, nextStage, useStore, type State } from "@/lib/store";
-import { service } from "@/lib/tokens";
 import { Button, Chip, Slider, fieldClass } from "../ui";
 import { Heading, Section } from "./Section";
 
@@ -55,7 +54,6 @@ export function NameSection() {
 
 /* ================================== Usage ================================== */
 const USAGE_ICON: Record<string, typeof Briefcase> = { office: Briefcase, streaming: Video, data: CloudUpload, basic: Globe, casual: Smartphone, remote: Laptop, "4k": MonitorPlay, gaming: Gamepad2 };
-const USAGE_COLOR: ServiceId[] = ["internet", "tv", "phone", "security"];
 
 export function UsageSection() {
   const { s, dispatch, t, goNext } = useStore();
@@ -65,9 +63,8 @@ export function UsageSection() {
     <Section stage="usage" tone="warm">
       <Heading id="section-usage-h" a={t("usageTitle")} b={t("usageTitleHighlight")} after="?" sub={t("selectAll")} />
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        {USAGE[s.addressType].map((u, i) => {
+        {USAGE[s.addressType].map((u) => {
           const on = s.usage.includes(u.id);
-          const c = service[USAGE_COLOR[i]];
           const Icon = USAGE_ICON[u.id] ?? Globe;
           return (
             <button
@@ -78,7 +75,9 @@ export function UsageSection() {
               onClick={() => dispatch({ type: "patch", patch: { usage: on ? s.usage.filter((x) => x !== u.id) : [...s.usage, u.id] } })}
               className={clsx("press relative flex min-h-28 flex-col items-start gap-1.5 rounded-md border p-4 text-left", on ? "border-ink bg-surface ring-1 ring-ink" : "border-line-strong bg-surface hover:border-ink")}
             >
-              <Icon aria-hidden className="size-6" style={{ color: c.text }} />
+              <span aria-hidden className="flex size-10 items-center justify-center rounded-md bg-primary-soft text-ink">
+                <Icon className="size-5" />
+              </span>
               <span className="mt-2 font-semibold leading-tight text-ink">{t(u.title)}</span>
               <span id={`use-${u.id}-d`} className="text-sm text-muted">
                 <span className="sr-only">, </span>

@@ -99,7 +99,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
     <div ref={wrap} className="relative">
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted" />
+          <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#0E7C5A]" />
           <input
             ref={input}
             id="addr"
@@ -125,13 +125,13 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
             }}
             onFocus={() => setDismissed(false)}
             onKeyDown={onKey}
-            className={clsx(fieldClass, "min-h-14 pl-11 text-[17px]", noMatch || invalid ? "border-danger" : "border-ink")}
+            className={clsx(fieldClass, "min-h-14 rounded-full border-2 pl-12 text-[17px] focus:border-primary focus:ring-primary", noMatch || invalid ? "border-[#FCA5A5]" : "border-transparent")}
           />
         </div>
         {action}
       </div>
 
-      <ul id={listId} role="listbox" aria-label={t("addrSearchLabel")} hidden={!open} className="absolute inset-x-0 top-[3.75rem] z-30 max-h-80 overflow-auto rounded-md border border-ink bg-surface py-1 shadow-lg">
+      <ul id={listId} role="listbox" aria-label={t("addrSearchLabel")} hidden={!open} className="absolute inset-x-0 top-[3.75rem] z-30 max-h-80 overflow-auto rounded-lg border border-line-strong bg-surface py-1.5 text-ink">
         {matches.map((a, i) => {
           const Icon = a.type === "business" ? Building2 : Home;
           return (
@@ -159,11 +159,11 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
 
       {!verified &&
         (noMatch || invalid ? (
-          <p id="addr-msg" className="mt-2 text-sm font-medium text-danger">
+          <p id="addr-msg" className="mt-2 pl-4 text-sm font-semibold text-[#FCA5A5]">
             {noMatch ? noMatchMsg : t("manualHint")}
           </p>
         ) : (
-          <p id="addr-hint" className="mt-2 text-sm text-muted">
+          <p id="addr-hint" className="mt-2 pl-4 text-sm text-on-dark-muted">
             {t("manualHint")}
           </p>
         ))}
@@ -171,16 +171,16 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
       {/* Always present, so screen readers announce "Address Found" and the type when they appear */}
       <div aria-live="polite" id="addr-found">
         {s.address && verified && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <span className="inline-flex items-center gap-1.5 font-semibold text-success">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 pl-4 text-sm">
+            <span className="caps inline-flex items-center gap-1.5 text-[12px] text-accent">
               <Check aria-hidden className="size-4" strokeWidth={2.5} />
               {t("addressFound")}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-ink">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-navy2 px-2.5 py-1 font-semibold text-white ring-1 ring-navy-line">
               {s.address.type === "business" ? <Building2 aria-hidden className="size-4" /> : <Home aria-hidden className="size-4" />}
               {t(s.address.type === "business" ? "businessAddress" : "homeAddress")}
             </span>
-            <button type="button" onClick={tryAgain} className="inline-flex min-h-11 items-center font-semibold text-link underline underline-offset-4">
+            <button type="button" onClick={tryAgain} className="inline-flex min-h-11 items-center font-semibold text-accent underline underline-offset-4">
               <span aria-hidden>←&nbsp;</span>
               {t("tryDifferentAddress")}
             </button>

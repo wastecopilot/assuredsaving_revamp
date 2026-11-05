@@ -9,6 +9,7 @@ import { STAGE, useStore } from "@/lib/store";
 import { service } from "@/lib/tokens";
 import { Button, SERVICE_ICON } from "../ui";
 import { AddressSearch, type AddressSearchHandle } from "./AddressSearch";
+import { Sparkle } from "./Shell";
 
 /**
  * Step 1, laid out like the official home page: headline, the five services,
@@ -71,32 +72,33 @@ export function Hero() {
   };
 
   return (
-    <section id="section-intent" aria-labelledby="hero-h" className="scroll-mt-28 border-b border-line bg-surface">
-      <div className="mx-auto max-w-5xl px-4 pb-10 pt-7 sm:px-6 sm:pb-16 sm:pt-16">
-        <p className="rise hidden text-sm font-semibold uppercase tracking-[0.14em] text-muted sm:block">{t("brand")}</p>
-        <h1 id="hero-h" tabIndex={-1} className="rise text-[2.25rem] font-bold leading-[1.02] text-ink outline-none sm:mt-3 sm:text-[4rem]">
-          {internetHeadline ? t("heroTitle") : t("intentTitle1")}{" "}
-          <span className="relative inline-block">
-            <span className="relative z-10">{internetHeadline ? t("heroTitleHighlight") : t("intentTitle2")}</span>
-            <span aria-hidden className="absolute inset-x-0 bottom-[0.08em] z-0 h-[0.28em] bg-primary" />
+    <section id="section-intent" aria-labelledby="hero-h" className="on-dark scroll-mt-28 bg-navy text-white">
+      <div className="mx-auto max-w-5xl px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-14">
+        {/* The brand type contrast: a light line, then a black line in mint with the sparkle */}
+        <h1 id="hero-h" tabIndex={-1} className="rise outline-none">
+          <span className="block text-[2.25rem] font-light leading-[1.05] tracking-[-0.03em] text-white sm:text-[3.75rem]">{internetHeadline ? t("heroTitle") : t("intentTitle1")}</span>{" "}
+          <span className="relative inline-flex items-start gap-2 text-[2.75rem] font-black leading-[1] tracking-[-0.045em] text-primary sm:text-[4.75rem]">
+            {internetHeadline ? t("heroTitleHighlight") : t("intentTitle2")}
+            <Sparkle className="mt-1 size-7 shrink-0 text-accent sm:mt-2 sm:size-10" />
           </span>
         </h1>
-        <p className="rise mt-3 max-w-2xl text-base text-muted sm:mt-5 sm:text-lg">
-          <strong className="font-semibold text-ink">{t("smartMatch")}</strong> <span className="max-sm:hidden">{t("heroDescription")}</span>
+        <p className="rise mt-4 max-w-2xl sm:mt-6">
+          <strong className="caps block text-[13px] tracking-[0.18em] text-accent sm:text-[14px]">{t("smartMatch")}</strong>
+          <span className="mt-2 block text-base text-on-dark-muted max-sm:hidden sm:text-lg">{t("heroDescription")}</span>
         </p>
 
         {/* Services */}
-        <div className="mt-6 sm:mt-10">
-          <h2 ref={servicesHead} className="text-base font-semibold text-ink">
+        <div className="mt-8 sm:mt-12">
+          <h2 ref={servicesHead} className="caps text-[13px] tracking-[0.16em] text-white">
             {t("serviceLabel")}
           </h2>
-          <p className="mt-0.5 text-sm text-muted max-sm:hidden">{t("multiSelectHint")}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-5 sm:gap-3">
+          <p className="mt-1 text-sm text-on-dark-muted max-sm:hidden">{t("multiSelectHint")}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
             {SERVICE_ORDER.map((id) => (
               <ServiceTile key={id} id={id} on={s.services.includes(id)} onToggle={() => toggle(id)} />
             ))}
           </div>
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:mt-3 sm:flex-wrap sm:overflow-visible">
+          <div className="mt-3 flex flex-wrap gap-2">
             {BUNDLE_PRESETS.map((b) => {
               const on = active?.id === b.id;
               return (
@@ -108,11 +110,11 @@ export function Hero() {
                     dispatch({ type: "setServices", s: b.services });
                     if (s.stage > STAGE.intent) collapse();
                   }}
-                  className={clsx("press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium", on ? "border-ink bg-ink text-white" : "border-line-strong text-ink hover:border-ink")}
+                  className={clsx("press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold ring-1", on ? "bg-white text-ink ring-white" : "text-white ring-navy-line hover:ring-on-dark-muted")}
                 >
-                  <span aria-hidden className="flex gap-0.5">
+                  <span aria-hidden className="flex -space-x-1">
                     {b.services.map((x) => (
-                      <span key={x} className="size-2 rounded-full" style={{ background: service[x].vivid }} />
+                      <span key={x} className={clsx("size-3 rounded-full ring-2", on ? "ring-white" : "ring-navy")} style={{ background: service[x].vivid }} />
                     ))}
                   </span>
                   {t(`preset_${b.id.replaceAll("-", "_")}` as "preset_quad")}
@@ -121,7 +123,7 @@ export function Hero() {
             })}
           </div>
           {tried && noService && (
-            <p id="hero-err" tabIndex={-1} role="alert" className="mt-3 flex items-center gap-2 text-sm font-semibold text-danger outline-none">
+            <p id="hero-err" tabIndex={-1} role="alert" className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#FCA5A5] outline-none">
               <AlertCircle aria-hidden className="size-4 shrink-0" />
               {t("pickServiceHint")}
             </p>
@@ -129,7 +131,7 @@ export function Hero() {
         </div>
 
         {/* Address + Check Availability */}
-        <div className="mt-6 sm:mt-8">
+        <div className="mt-8 sm:mt-10">
           <AddressSearch
             ref={addr}
             onChoose={choose}
@@ -137,7 +139,7 @@ export function Hero() {
             onSubmit={check}
             invalid={tried && !s.address && !noService}
             action={
-              <Button size="lg" variant={needsBusinessChoice ? "secondary" : "primary"} onClick={check} className="min-h-14 shrink-0 px-7 text-[17px]" iconRight={<ArrowRight aria-hidden className="size-5" />}>
+              <Button size="lg" variant={needsBusinessChoice ? "secondary" : "primary"} onClick={check} className="min-h-14 shrink-0 rounded-full px-7 text-[17px]" iconRight={<ArrowRight aria-hidden className="size-5" />}>
                 {t("checkAvailability")}
               </Button>
             }
@@ -149,10 +151,10 @@ export function Hero() {
               tabIndex={-1}
               role={panelPing ? "alert" : "group"}
               aria-label={t("businessOnlyTitle")}
-              className="mt-4 rounded-md border-2 border-ink bg-warning-soft p-4 outline-none focus-visible:ring-2 focus-visible:ring-ink"
+              className="mt-4 rounded-lg border-l-4 border-primary bg-navy2 p-4 text-white outline-none ring-1 ring-navy-line focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <p className="font-semibold text-ink">{t("businessOnlyTitle")}</p>
-              <p className="mt-1 text-sm text-ink">{t("businessOnlyBody")}</p>
+              <p className="caps text-[13px] tracking-[0.14em] text-accent">{t("businessOnlyTitle")}</p>
+              <p className="mt-1.5 text-sm text-on-dark-muted">{t("businessOnlyBody")}</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <Button onClick={() => chooseBusiness(["internet"])} iconLeft={<Wifi aria-hidden className="size-4" />}>
                   {t("businessOptionInternet")}
@@ -165,14 +167,15 @@ export function Hero() {
           )}
         </div>
 
-        <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-5 text-sm font-semibold text-ink sm:mt-10 sm:pt-6">
+        <ul className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-navy-line pt-6 sm:mt-12">
           {[
             { icon: ShieldCheck, label: t("trust") },
             { icon: Eye, label: t("transparency") },
             { icon: Zap, label: t("speed") },
-          ].map((i) => (
-            <li key={i.label} className="inline-flex items-center gap-2">
-              <i.icon aria-hidden className="size-4 text-primary-strong" />
+          ].map((i, n) => (
+            <li key={i.label} className="caps inline-flex items-center gap-2 text-[12px] tracking-[0.2em] text-on-dark-muted">
+              {n > 0 && <span aria-hidden className="mr-3 hidden size-1 rounded-full bg-navy-line sm:block" />}
+              <i.icon aria-hidden className="size-4 text-accent" />
               {i.label}
             </li>
           ))}
@@ -182,7 +185,7 @@ export function Hero() {
   );
 }
 
-/** A service tile: white with a coloured top bar, or filled with the service colour when selected. Compact on phones. */
+/** A service tile on the navy stage: the official colour as an icon square; filled with it when selected. */
 function ServiceTile({ id, on, onToggle }: { id: ServiceId; on: boolean; onToggle: () => void }) {
   const { t } = useStore();
   const Icon = SERVICE_ICON[id];
@@ -193,20 +196,22 @@ function ServiceTile({ id, on, onToggle }: { id: ServiceId; on: boolean; onToggl
       aria-pressed={on}
       onClick={onToggle}
       className={clsx(
-        "press relative flex min-h-14 items-center gap-2.5 rounded-md border border-t-4 px-3 text-left sm:min-h-[104px] sm:flex-col sm:items-start sm:justify-between sm:p-3.5",
+        "press relative flex min-h-14 items-center gap-2.5 rounded-lg px-3 text-left ring-1 sm:min-h-[112px] sm:flex-col sm:items-start sm:justify-between sm:p-3.5",
         id === "security" && "max-sm:col-span-2",
-        !on && "bg-surface hover:bg-surface2",
+        !on && "bg-navy2 ring-navy-line hover:ring-on-dark-muted",
       )}
-      style={on ? { background: c.vivid, borderColor: c.vivid, color: c.on } : { borderColor: "var(--line-strong)", borderTopColor: c.vivid }}
+      style={on ? { background: c.vivid, color: c.on, boxShadow: `0 0 0 1px ${c.vivid}` } : undefined}
     >
-      <span className="flex items-start justify-between sm:w-full">
-        <Icon aria-hidden className="size-5 sm:size-6" style={on ? undefined : { color: c.text }} strokeWidth={2} />
-        <span aria-hidden className={clsx("hidden size-5 items-center justify-center rounded-sm border sm:flex", on ? "border-transparent bg-white" : "border-line-strong")} style={on ? { color: "#141414" } : undefined}>
+      <span className="flex shrink-0 items-center justify-between gap-2 sm:w-full sm:items-start">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9" style={on ? { background: "#0B1430", color: c.vivid } : { background: c.vivid, color: c.on }}>
+          <Icon aria-hidden className="size-[18px]" strokeWidth={2.25} />
+        </span>
+        <span aria-hidden className={clsx("hidden size-5 items-center justify-center rounded-full sm:flex", on ? "bg-ink text-white" : "ring-1 ring-on-dark-muted")}>
           {on && <Check className="size-3.5" strokeWidth={3} />}
         </span>
       </span>
-      <span className={clsx("flex-1 text-[15px] font-semibold sm:mt-4 sm:flex-none sm:text-base", !on && "text-ink")}>{t(`svc_${id}`)}</span>
-      {on && <Check aria-hidden className="size-4 sm:hidden" strokeWidth={3} />}
+      <span className={clsx("caps min-w-0 flex-1 text-[12px] tracking-[0.12em] [overflow-wrap:normal] sm:flex-none", on ? "text-ink" : "text-white")}>{t(`svc_${id}`)}</span>
+      {on && <Check aria-hidden className="size-4 shrink-0 sm:hidden" strokeWidth={3} />}
     </button>
   );
 }

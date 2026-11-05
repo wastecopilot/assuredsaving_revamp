@@ -9,14 +9,50 @@ import { service } from "@/lib/tokens";
 import { cleanText, nameOk } from "@/lib/schedule";
 import { SERVICE_ICON } from "../ui";
 
-/** Brand mark: an ink tile with an orange shield and check. */
-export function Logo({ size = 32 }: { size?: number }) {
+/** The brand's four-point sparkle (as beside "Saving" on assuredsaving.com), flat. */
+export function Sparkle({ className, color = "currentColor" }: { className?: string; color?: string }) {
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden className="shrink-0">
-      <rect width="32" height="32" rx="6" fill="#141414" />
-      <path d="M16 6.5 8.5 9.4v5.4c0 4.8 3.2 8.1 7.5 9.4 4.3-1.3 7.5-4.6 7.5-9.4V9.4L16 6.5Z" fill="#FF5A1F" />
-      <path d="m12.4 15.6 2.6 2.6 4.8-5" fill="none" stroke="#141414" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path d="M12 1.5c.5 5.6 2.9 8 8.5 8.5-5.6.5-8 2.9-8.5 8.5-.5-5.6-2.9-8-8.5-8.5 5.6-.5 8-2.9 8.5-8.5Z" fill={color} />
+      <path d="M19.5 15c.2 2.2 1.1 3.1 3.3 3.3-2.2.2-3.1 1.1-3.3 3.3-.2-2.2-1.1-3.1-3.3-3.3 2.2-.2 3.1-1.1 3.3-3.3Z" fill={color} />
     </svg>
+  );
+}
+
+/** A small flat US flag, as in the official "ASSURED SAVING" pill. */
+export function UsFlag({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 18" aria-hidden className={className}>
+      <rect width="28" height="18" rx="2.5" fill="#FFFFFF" />
+      {[0, 2, 4, 6, 8, 10, 12].map((i) => (
+        <rect key={i} y={(i * 18) / 13} width="28" height={18 / 13} fill="#E0262D" />
+      ))}
+      <rect width="12.5" height={(7 * 18) / 13} rx="1" fill="#1E3A8A" />
+      {[0, 1, 2].map((r) => [0, 1, 2, 3].map((c) => <circle key={`${r}${c}`} cx={2 + c * 2.9} cy={1.9 + r * 2.6} r="0.6" fill="#FFFFFF" />))}
+    </svg>
+  );
+}
+
+/**
+ * The Assured Saving wordmark: "Assured" in a light weight, "Saving" in black, then the
+ * sparkle, the same contrast the brand uses on its home page. `compact` is the header pill.
+ */
+export function Wordmark({ compact, dark = true }: { compact?: boolean; dark?: boolean }) {
+  const { t } = useStore();
+  if (compact)
+    return (
+      <span className={clsx("inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-3 ring-1 sm:gap-2.5 sm:px-3.5", dark ? "bg-navy2 ring-navy-line" : "bg-surface ring-line")}>
+        <UsFlag className="h-3.5 w-auto shrink-0" />
+        <span className={clsx("caps text-[11px] tracking-[0.12em] max-[359px]:sr-only sm:text-[13px] sm:tracking-[0.18em]", dark ? "text-white" : "text-ink")}>{t("brand")}</span>
+      </span>
+    );
+  return (
+    <span className={clsx("inline-flex items-baseline gap-1.5 text-xl leading-none tracking-[-0.02em]", dark ? "text-white" : "text-ink")}>
+      <span className="font-light" aria-hidden>Assured</span>
+      <span className="font-black" aria-hidden>Saving</span>
+      <span className="sr-only">{t("brand")}</span>
+      <Sparkle className="size-4 self-start text-primary" />
+    </span>
   );
 }
 
@@ -42,11 +78,11 @@ export const STAGE_LABEL: Record<StageName, Key> = {
 function LangSwitch() {
   const { s, dispatch } = useStore();
   return (
-    <div className="flex items-center text-sm font-semibold">
+    <div className="flex shrink-0 items-center whitespace-nowrap rounded-full bg-navy2 px-0.5 ring-1 ring-navy-line">
       {(["en", "es"] as const).map((l, i) => (
         <span key={l} className="flex items-center">
           {i === 1 && (
-            <span aria-hidden className="px-0.5 text-line-strong">
+            <span aria-hidden className="text-xs text-on-dark-muted">
               |
             </span>
           )}
@@ -55,7 +91,7 @@ function LangSwitch() {
             lang={l}
             aria-pressed={s.lang === l}
             onClick={() => dispatch({ type: "patch", patch: { lang: l } })}
-            className={clsx("min-h-11 min-w-11 rounded-md px-2 transition-colors", s.lang === l ? "text-ink underline decoration-primary decoration-2 underline-offset-4" : "text-muted hover:text-ink")}
+            className={clsx("caps min-h-11 min-w-10 rounded-full px-1.5 text-[11px] tracking-[0.1em] transition-colors sm:min-w-11 sm:px-2 sm:text-[12px]", s.lang === l ? "text-accent" : "text-on-dark-muted hover:text-white")}
           >
             {l === "en" ? "ENG" : "ESP"}
           </button>
@@ -65,44 +101,39 @@ function LangSwitch() {
   );
 }
 
+/** The midnight header: the brand pill, the step name (never a number), language and region. */
 export function Header() {
   const { s, dispatch, t } = useStore();
   const visible = useVisibleStages();
   const current = STAGE_NAMES[s.stage];
   const idx = Math.max(0, visible.indexOf(current));
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface [@media(max-height:500px)]:static">
-      <div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
+    <header className="on-dark sticky top-0 z-40 bg-navy text-white [@media(max-height:500px)]:static">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         {s.stage > 0 ? (
           <button
             type="button"
             onClick={() => dispatch({ type: "back" })}
-            className="press -ml-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-ink hover:bg-surface2"
+            className="press -ml-2 inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold text-white hover:bg-navy2"
           >
             <ArrowLeft aria-hidden className="size-4" />
             <span className="max-sm:sr-only">{t("back")}</span>
           </button>
         ) : null}
-        <a href="#section-intent" className="flex min-h-11 items-center gap-2.5 rounded-md">
-          <Logo />
-          <span className="text-[17px] font-bold tracking-tight text-ink max-[359px]:sr-only">{t("brand")}</span>
+        <a href="#section-intent" aria-label={t("brand")} className="flex min-h-11 items-center rounded-full">
+          <Wordmark compact />
         </a>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-3">
-          {s.stage > 0 && (
-            <>
-              <p className="hidden text-sm font-semibold uppercase tracking-wider text-muted md:block">{t(STAGE_LABEL[current])}</p>
-              <span className="hidden h-6 w-px bg-line md:block" aria-hidden />
-            </>
-          )}
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+          {s.stage > 0 && <p className="caps hidden text-[12px] text-accent md:block">{t(STAGE_LABEL[current])}</p>}
           <LangSwitch />
-          <span className="hidden rounded-sm border border-line px-2 py-1 text-sm font-semibold text-muted sm:inline-block">{t("usOnly")}</span>
+          <span className="caps hidden rounded-full px-2 text-[12px] text-on-dark-muted sm:inline-block">{t("usOnly")}</span>
         </div>
       </div>
-      {/* Segmented progress: one segment per step that applies */}
-      <div className="flex gap-px" aria-hidden>
+      {/* Progress: one segment per step that applies */}
+      <div className="flex gap-0.5 bg-navy" aria-hidden>
         {visible.map((n, i) => (
-          <span key={n} className={clsx("h-[3px] flex-1 transition-colors", i <= idx ? "bg-primary" : "bg-line")} />
+          <span key={n} className={clsx("h-1 flex-1 transition-colors", i <= idx ? "bg-primary" : "bg-navy2")} />
         ))}
       </div>
       <ContextBar />
@@ -116,23 +147,23 @@ function ContextBar() {
   const chosen = SERVICE_ORDER.filter((x) => s.services.includes(x));
   if (s.stage < 1 || !chosen.length) return null;
   const first = cleanText(s.name).split(" ")[0];
-  const item = "inline-flex shrink-0 items-center gap-1.5 text-sm text-ink";
+  const item = "inline-flex shrink-0 items-center gap-1.5 text-sm text-white";
   return (
-    <div className="border-t border-line bg-surface2">
+    <div className="border-t border-navy-line bg-navy2">
       <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-1.5 sm:px-6">
         {/* relative: screen-reader-only labels are absolutely positioned and must be clipped here too */}
         <ul className="relative flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
           {nameOk(s.name) && (
-            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-ink max-xl:hidden">
-              <User aria-hidden className="size-4 text-muted" />
+            <li className="inline-flex min-w-0 shrink items-center gap-1.5 text-sm text-white max-xl:hidden">
+              <User aria-hidden className="size-4 text-accent" />
               <span className="max-w-[9rem] truncate [overflow-wrap:normal]">{first}</span>
             </li>
           )}
           {s.address && (
-            <li className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-ink">
-              <MapPin aria-hidden className="size-4 shrink-0 text-muted" />
+            <li className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-white">
+              <MapPin aria-hidden className="size-4 shrink-0 text-accent" />
               <span className="min-w-0 max-w-[16rem] truncate [overflow-wrap:normal]">{s.address.line1}</span>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-xs font-semibold text-muted ring-1 ring-line">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-2 py-0.5 text-xs font-semibold text-on-dark-muted ring-1 ring-navy-line">
                 {s.address.type === "business" ? <Building2 aria-hidden className="size-3" /> : <Home aria-hidden className="size-3" />}
                 <span className="max-lg:sr-only">{t(s.address.type === "business" ? "businessAddress" : "homeAddress")}</span>
               </span>
@@ -143,7 +174,7 @@ function ContextBar() {
               {chosen.map((x) => {
                 const Icon = SERVICE_ICON[x];
                 return (
-                  <span key={x} className="flex size-5 items-center justify-center rounded-sm" style={{ background: service[x].vivid, color: service[x].on }}>
+                  <span key={x} className="flex size-5 items-center justify-center rounded-full" style={{ background: service[x].vivid, color: service[x].on }}>
                     <Icon className="size-3" strokeWidth={2.5} />
                   </span>
                 );
@@ -155,7 +186,7 @@ function ContextBar() {
         <button
           type="button"
           onClick={() => dispatch({ type: "patch", patch: { modal: { kind: "callback", planId: null } } })}
-          className="hidden min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-link hover:bg-primary-soft md:inline-flex"
+          className="hidden min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-accent hover:bg-navy md:inline-flex"
         >
           <PhoneCall aria-hidden className="size-4" />
           {t("scheduleCallback")}
@@ -185,11 +216,11 @@ function StartOver() {
             dispatch({ type: "reset" });
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="inline-flex min-h-11 items-center rounded-md bg-ink px-3 text-sm font-semibold text-white"
+          className="inline-flex min-h-11 items-center rounded-full bg-primary px-3.5 text-sm font-bold text-ink"
         >
           {t("startOverConfirm")}
         </button>
-        <button type="button" onClick={() => setAsking(false)} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-ink hover:bg-surface">
+        <button type="button" onClick={() => setAsking(false)} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-white hover:bg-navy">
           {t("startOverCancel")}
         </button>
       </div>
@@ -198,7 +229,7 @@ function StartOver() {
     <button
       type="button"
       onClick={() => setAsking(true)}
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold text-on-dark-muted hover:bg-navy hover:text-white"
     >
       <RotateCcw aria-hidden className="size-4" />
       <span className="max-sm:sr-only">{t("startOver")}</span>
@@ -209,24 +240,21 @@ function StartOver() {
 export function Footer() {
   const { s, t } = useStore();
   return (
-    <footer className="bg-surface2 text-ink">
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <footer className="on-dark bg-navy text-white">
+      <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
-            <div className="flex items-center gap-2.5">
-              <Logo />
-              <span className="text-base font-bold tracking-tight">{t("brand")}</span>
-            </div>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">{t("disclaimer")}</p>
+            <Wordmark />
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-on-dark-muted">{t("disclaimer")}</p>
           </div>
           <nav aria-label={t("footerNav")} className="grid gap-8 sm:grid-cols-3">
             {FOOTER_LINKS.map((g) => (
               <div key={g.group}>
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">{t(g.group)}</h2>
-                <ul className="mt-3 space-y-1">
+                <h2 className="caps text-[12px] text-accent">{t(g.group)}</h2>
+                <ul className="mt-3 space-y-0.5">
                   {g.links.map((l) => (
                     <li key={l.slug}>
-                      <a href={siteUrl(l.slug, s.lang)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-ink hover:underline">
+                      <a href={siteUrl(l.slug, s.lang)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-white hover:text-accent">
                         {t(l.key)}
                         <span className="sr-only"> {t("newTab")}</span>
                       </a>
@@ -237,7 +265,7 @@ export function Footer() {
             ))}
           </nav>
         </div>
-        <p className="mt-10 border-t border-line pt-6 text-sm text-muted">© {new Date().getFullYear()} Assured Saving</p>
+        <p className="mt-10 border-t border-navy-line pt-6 text-sm text-on-dark-muted">© {new Date().getFullYear()} Assured Saving</p>
       </div>
     </footer>
   );

@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { cssVariables } from "@/lib/tokens";
 import { translate } from "@/lib/i18n";
 import "./globals.css";
 
-const instrument = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
+/* Inter is the face assuredsaving.com uses; the brand pairs a light 300 with a black 900. */
+const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "900"], variable: "--font-body", display: "swap" });
 
 /* Same page title as https://www.assuredsaving.com/ */
 const title = "Assured Saving | Agentic AI Assistant";
@@ -17,11 +18,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary", title, description },
 };
 
-export const viewport: Viewport = { themeColor: "#FFFFFF", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0B1430", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={instrument.variable}>
+    <html lang="en" className={inter.variable}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: cssVariables() }} />
       </head>

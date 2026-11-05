@@ -53,10 +53,10 @@
 
 @theme {
   --spacing: 4px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 8px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 14px;
 }
 
 @layer base {
@@ -82,7 +82,7 @@
     outline-offset: 2px;
   }
   .on-dark :focus-visible {
-    outline-color: #ffffff;
+    outline-color: var(--accent);
   }
   ::selection {
     background: var(--primary-soft);
@@ -90,6 +90,13 @@
   h1, h2 {
     letter-spacing: -0.03em;
   }
+}
+
+/* The brand's label style: black weight, letter-spaced capitals */
+@utility caps {
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.14em;
 }
 
 @utility tabular {

@@ -5,13 +5,14 @@ import type { Plan } from "@/data/sample";
 import { allInAfter, allInNow, isPriced, money, planReasons, speedText, techLabel, type Label } from "@/lib/plans";
 import type { Key } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
-import { service } from "@/lib/tokens";
+import { Sparkle } from "./Shell";
 
 /** Earned labels: flat colour, official wording. */
 export const LABEL_STYLE: Record<Label, { bg: string; fg: string; icon: typeof Tag; key: Key }> = {
-  mostAffordable: { bg: service.security.vivid, fg: service.security.on, icon: Tag, key: "label_mostAffordable" },
-  bestValue: { bg: "#FF5A1F", fg: "#141414", icon: Sparkles, key: "label_bestValue" },
-  fastest: { bg: service.internet.vivid, fg: service.internet.on, icon: Zap, key: "label_fastest" },
+  // Brand pills, never service colours (cyan means Internet, green means Security)
+  mostAffordable: { bg: "#DDFBEF", fg: "#0B1430", icon: Tag, key: "label_mostAffordable" },
+  bestValue: { bg: "#00D492", fg: "#0B1430", icon: Sparkles, key: "label_bestValue" },
+  fastest: { bg: "#0B1430", fg: "#FFFFFF", icon: Zap, key: "label_fastest" },
 };
 
 /**
@@ -28,18 +29,22 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
   const promo = isPriced(plan) && plan.pricing.promo;
 
   return (
-    <article data-plan-card aria-labelledby={`p-${plan.id}`} className={clsx("relative rounded-md border bg-surface", featured ? "border-ink" : "border-line-strong")}>
-      {featured && <span aria-hidden className="absolute inset-y-0 left-0 w-1.5 rounded-l-md bg-primary" />}
+    <article data-plan-card aria-labelledby={`p-${plan.id}`} className={clsx("relative overflow-hidden rounded-lg border bg-surface", featured ? "border-2 border-navy" : "border-line-strong")}>
+      {featured && (
+        <p className="caps flex items-center gap-2 bg-navy px-5 py-2 text-[12px] tracking-[0.16em] text-white sm:px-6">
+          <Sparkle className="size-3.5 text-primary" />
+          {t("ourTopPick")}
+        </p>
+      )}
       <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(max-content,0.9fr)_auto] lg:items-start lg:gap-x-6 lg:gap-y-3">
         {/* Who and what */}
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <p className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-semibold text-muted tabular">#{rank}</span>
-            {featured && <span className="font-semibold text-ink">{t("ourTopPick")}</span>}
+            <span className="caps text-[12px] text-muted tabular">#{rank}</span>
             {labels.map((l) => {
               const st = LABEL_STYLE[l];
               return (
-                <span key={l} className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold" style={{ background: st.bg, color: st.fg }}>
+                <span key={l} className="caps inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] tracking-[0.1em]" style={{ background: st.bg, color: st.fg }}>
                   <st.icon aria-hidden className="size-3.5" />
                   {t(st.key)}
                 </span>
@@ -48,7 +53,7 @@ export function PlanCard({ plan, rank, labels, top, featured }: { plan: Plan; ra
           </p>
           {/* Provider and plan together, so heading navigation makes sense */}
           <h3 id={`p-${plan.id}`} className="mt-2">
-            <span className="block text-xl font-bold text-ink">{plan.provider}</span>
+            <span className="block text-2xl font-black tracking-[-0.02em] text-ink">{plan.provider}</span>
             <span className="block text-sm font-normal text-muted">{plan.name}</span>
           </h3>
         </div>

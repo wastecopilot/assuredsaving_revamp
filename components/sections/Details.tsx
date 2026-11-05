@@ -31,7 +31,7 @@ export function DetailsDrawer() {
       open={!!plan}
       onClose={close}
       closeLabel={t("close")}
-      header={plan && <p className="mb-1 text-sm font-semibold text-primary">{plan.provider}</p>}
+      header={plan && <p className="caps mb-1 text-[12px] text-link">{plan.provider}</p>}
       title={plan?.name ?? ""}
       footer={
         plan && (

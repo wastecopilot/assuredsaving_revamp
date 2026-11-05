@@ -31,7 +31,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={type}
       className={clsx(
-        "press inline-flex select-none items-center justify-center gap-2 rounded-md font-semibold",
+        "press inline-flex select-none items-center justify-center gap-2 rounded-full font-bold",
         "disabled:cursor-not-allowed disabled:border-line disabled:bg-surface2 disabled:text-muted disabled:shadow-none",
         size === "lg" ? "min-h-12 px-6 text-base" : "min-h-11 px-4 text-sm",
         variant === "primary" && "bg-primary text-on-primary hover:bg-primary-strong",

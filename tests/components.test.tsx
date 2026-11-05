@@ -23,7 +23,7 @@ describe("Button", () => {
     expect(b).toHaveAttribute("type", "button");
     expect(b.className).toMatch(/min-h-1[12]/);
   });
-  it("primary is flat orange with ink text", () => {
+  it("primary is flat brand mint with ink text", () => {
     render(<Button>Go</Button>);
     expect(screen.getByRole("button").className).toMatch(/bg-primary/);
     expect(screen.getByRole("button").className).toMatch(/text-on-primary/);
@@ -153,7 +153,7 @@ describe("Service tiles (Hero)", () => {
     expect(tile).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(tile);
     expect(tile).toHaveAttribute("aria-pressed", "true");
-    expect(tile.getAttribute("style")).toMatch(/background: (rgb\(41, 98, 242\)|#2962F2)/i);
+    expect(tile.getAttribute("style")).toMatch(/background: (rgb\(34, 211, 238\)|#22D3EE)/i);
   });
   it("show five services in the official order", () => {
     inStore(<Hero />);
