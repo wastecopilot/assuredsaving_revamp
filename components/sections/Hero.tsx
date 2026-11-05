@@ -74,7 +74,7 @@ export function Hero() {
   return (
     <section id="section-intent" aria-labelledby="hero-h" className="on-dark scroll-mt-28 bg-navy text-white">
       <div className="mx-auto max-w-5xl px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-14">
-        {/* The brand type contrast: a light line, then a black line in mint with the sparkle */}
+        {/* The brand type contrast: a light line, then a black line in sunflower with the sparkle */}
         <h1 id="hero-h" tabIndex={-1} className="rise outline-none">
           <span className="block text-[2.25rem] font-light leading-[1.05] tracking-[-0.03em] text-white sm:text-[3.75rem]">{internetHeadline ? t("heroTitle") : t("intentTitle1")}</span>{" "}
           <span className="relative inline-flex items-start gap-2 text-[2.75rem] font-black leading-[1] tracking-[-0.045em] text-primary sm:text-[4.75rem]">
