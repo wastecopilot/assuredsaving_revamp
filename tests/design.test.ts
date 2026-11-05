@@ -4,8 +4,9 @@
  * signatures on assuredsaving.com, made flat and bright, instead of a generic template:
  *
  * 1. Flat colour only: no gradients, glows, blur/glass, or decorative shadows.
- * 2. Brand colours: midnight navy stage, the brand mint for the main action (ink text),
- *    and the official service colours (cyan, fuchsia, blue, amber, green).
+ * 2. Our own bright palette, "Berry & Sunshine" (deliberately NOT the official site's navy
+ *    and mint): a vivid berry stage, sunflower yellow for the main action (ink text), and
+ *    five bright service colours that differ from both.
  * 3. Every text colour pair passes WCAG AA.
  * 4. Interactive controls are at least 44px tall.
  * 5. Shape: 14px cards, pill search and actions; nothing oversized.
@@ -49,20 +50,26 @@ describe("1. flat colour only", () => {
   });
 });
 
-describe("2. brand colours", () => {
-  it("uses the brand mint for the main action, with ink text", () => {
-    expect(color.primary.toUpperCase()).toBe("#00D492");
+describe("2. our own bright palette", () => {
+  const OFFICIAL = ["#020617", "#0B1430", "#00D492", "#34D399", "#2DD4BF", "#0F172A"];
+  it("uses sunflower yellow for the main action, with ink text", () => {
+    expect(color.primary.toUpperCase()).toBe("#FFD60A");
     expect(color.onPrimary.toUpperCase()).toBe(color.ink.toUpperCase());
   });
-  it("sets step 1 on a midnight-navy stage, with light content sections below", () => {
-    expect(color.navy.toUpperCase()).toBe("#0B1430");
-    expect(ratio("#FFFFFF", color.navy)).toBeGreaterThanOrEqual(15);
+  it("sets step 1 on a vivid berry stage (white text AA), with light sections below", () => {
+    expect(color.navy.toUpperCase()).toBe("#B8124F");
+    expect(ratio("#FFFFFF", color.navy)).toBeGreaterThanOrEqual(4.5);
     expect(ratio(color.canvas, "#FFFFFF")).toBeLessThan(1.1);
   });
-  it("gives each service its official colour, all distinct from the mint", () => {
+  it("does not reuse the official site's navy or mint anywhere in the tokens", () => {
+    const all = [...Object.values(color), ...Object.values(service).flatMap((c) => Object.values(c))].map((c) => c.toUpperCase());
+    for (const o of OFFICIAL) expect(all).not.toContain(o);
+  });
+  it("gives each service its own bright colour, distinct from the yellow and the berry", () => {
     const vivid = Object.values(service).map((c) => c.vivid.toUpperCase());
     expect(new Set(vivid).size).toBe(5);
     expect(vivid).not.toContain(color.primary.toUpperCase());
+    expect(vivid).not.toContain(color.navy.toUpperCase());
   });
 });
 
@@ -122,7 +129,7 @@ describe("6b. brand marks", () => {
     for (const { src, f } of SOURCE) expect(src, f).not.toMatch(/M16 6\.5 8\.5 9\.4/);
     expect(hero).not.toMatch(/h-\[0\.28em\] bg-primary/);
   });
-  it("sets the headline in the brand's light/black contrast on the navy stage", () => {
+  it("sets the headline in the brand's light/black contrast on the berry stage", () => {
     expect(hero).toMatch(/bg-navy/);
     expect(hero).toMatch(/font-light/);
     expect(hero).toMatch(/font-black/);

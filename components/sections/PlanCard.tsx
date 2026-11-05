@@ -10,9 +10,9 @@ import { Sparkle } from "./Shell";
 /** Earned labels: flat colour, official wording. */
 export const LABEL_STYLE: Record<Label, { bg: string; fg: string; icon: typeof Tag; key: Key }> = {
   // Brand pills, never service colours (cyan means Internet, green means Security)
-  mostAffordable: { bg: "#DDFBEF", fg: "#0B1430", icon: Tag, key: "label_mostAffordable" },
-  bestValue: { bg: "#00D492", fg: "#0B1430", icon: Sparkles, key: "label_bestValue" },
-  fastest: { bg: "#0B1430", fg: "#FFFFFF", icon: Zap, key: "label_fastest" },
+  mostAffordable: { bg: "#FFF6C2", fg: "#1A1033", icon: Tag, key: "label_mostAffordable" },
+  bestValue: { bg: "#FFD60A", fg: "#1A1033", icon: Sparkles, key: "label_bestValue" },
+  fastest: { bg: "#B8124F", fg: "#FFFFFF", icon: Zap, key: "label_fastest" },
 };
 
 /**

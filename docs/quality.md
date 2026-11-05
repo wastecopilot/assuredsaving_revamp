@@ -125,34 +125,43 @@ Result: **986 sessions in 72 minutes, 0 rule violations, 0 broken flows and 0 ho
 
 ---
 
-# Round 2: the Assured Saving brand system
+# Round 2: the Assured Saving brand system, in our own bright palette
 
-The feedback was: "It's a bit AI and generic now. Make it our own expertly tailored design."
+The feedback was: "It's a bit AI and generic now. Make it our own expertly tailored design." We also had a standing rule: do not copy the official site's colours. Use our own bright, vibrant theme.
 
-## What read as generic, and what replaced it
+So the brand's **marks and type** come from assuredsaving.com, and the **colour** is our own palette, "Berry & Sunshine":
+- a vivid berry stage, #B8124F;
+- sunflower yellow (#FFD60A) for every main action, with ink text;
+- a deep plum ink (#1A1033);
+- warm-white sections;
+- five bright service colours: sky #4DA3FF, orange #FF8A3D, lilac #B49CFF, lime #7CE36B and aqua #2EE6C5.
 
-| Generic before | Assured Saving now |
+A test fails if the official site's navy or mint ever shows up in the tokens.
+
+| Generic before | Ours now |
 | --- | --- |
-| A stock shield-and-check logo | The brand's own marks from assuredsaving.com: the **"Assured" (light) / "Saving" (black) wordmark with the sparkle**, and the **US-flag "ASSURED SAVING" pill** in the header |
-| An orange that has nothing to do with the brand | The brand's **mint** (the green of "Saving") for every main action, with ink text, on a **midnight-navy** stage, as on the official site, but flat |
-| A highlighter bar under the headline | The brand's **light/black type contrast**: "Find the Best" in Inter Light, "Internet" in Inter Black and mint, with the sparkle |
-| Mixed label styles | The brand's **letter-spaced black capitals** for every label (services, trust strip, step name, footer headings, Address Found) |
-| Generic service tiles | The **official service colours** (cyan, fuchsia, blue, amber, green) as icon squares on navy tiles; selected tiles fill with that colour |
-| Generic plan-card stickers | Labels as brand pills (mint, mint-soft, navy) that never reuse a service colour. The top pick gets a navy "OUR TOP PICK" band with the sparkle, and provider names are set in Inter Black |
-| A plain checklist for the scan | The scan runs on the navy stage with the sparkle, mint progress and the provider list |
-| A grey footer | A midnight footer with the wordmark and mint capitals |
+| A stock shield-and-check logo | The brand's own marks: the **"Assured" (light) / "Saving" (black) wordmark with the sparkle**, and the **US-flag "ASSURED SAVING" pill** |
+| An orange that had nothing to do with the brand | The **berry** stage and **sunflower** actions, flat, bright and our own |
+| A highlighter bar under the headline | The brand's **light/black type contrast**: "Find the Best" in Inter Light, "Internet" in Inter Black and sunflower, with the sparkle |
+| Mixed label styles | **Letter-spaced black capitals** for every label |
+| Generic service tiles | Bright service colours as icon squares on raised berry tiles; selected tiles fill with the colour |
+| Generic plan-card stickers | Labels as brand pills (sunflower, soft yellow, berry) that never reuse a service colour. The top pick gets a berry "OUR TOP PICK" band with the sparkle, and provider names are set in Inter Black |
+| A plain checklist for the scan | The scan runs on the berry stage with the sparkle and a sunflower progress bar |
+| A grey footer | A deep plum footer with the wordmark and sunflower capitals |
 
 ## Design spec, updated first
 
-`tests/design.test.ts` was rewritten for the brand system before any UI change. It was red (7 failing), then the UI was rebuilt until all 98 passed. It checks:
-- the mint action colour and the navy stage;
-- the official service colours;
-- AA contrast on navy;
+`tests/design.test.ts` was rewritten before the UI changes. It checks:
+- the sunflower action and the berry stage (white and yellow text pass AA);
+- that the official navy and mint are not used;
+- five distinct service colours;
+- AA contrast for every pair;
 - Inter with its 300 and 900 weights;
 - the `caps` label style;
 - the wordmark, sparkle and US-flag pill;
-- no shield logo and no highlighter marker;
-- the light/black headline on the navy stage.
+- no shield logo and no highlighter marker.
+
+The berry was deepened from #C8175D to #B8124F so that small sunflower text on it passes AA (4.59:1).
 
 ## UX and brand review, discussed and improved
 
@@ -163,16 +172,16 @@ A separate reviewer drove the build at 390×844, 640×400, 1280 and 1440 wide, i
 | 1 | Back from results re-ran the scan and looped back to results | Major | **Fixed.** Back and browser Back skip the automatic scan, and results replace the scan's history entry. Test. |
 | 2 | Enter in the address or name left focus in the old field | Major | **Fixed.** Focus moves to the new step's heading unless you are typing inside that step. |
 | 3 | Focus fell to the page after "Send Code" | Major | **Fixed.** Focus moves to the code field. |
-| 4 | Provider name in mint on white in the details drawer (1.9:1) | Major | **Fixed.** Dark mint capitals (AA). |
+| 4 | The provider name in the details drawer failed contrast (1.9:1) | Major | **Fixed.** Dark berry capitals (AA). |
 | 5 | The results and scan headings were plain bold | Minor | **Fixed.** They are now set in Inter Black, in the brand type. |
 | 6 | Labels reused the service colours | Minor | **Fixed.** Labels are brand pills only. |
-| 7 | The plan card looked like a stock SaaS card | Minor | **Fixed.** A navy "OUR TOP PICK" band with the sparkle, capital labels and black provider names. |
-| 8 | The business notice was an off-brand yellow alert | Minor | **Fixed.** A navy card with a mint rule and a capital heading. |
-| 9 | The scan looked like a default checklist | Minor | **Fixed.** It now runs on the navy stage with the sparkle. |
-| 10 | Usage icons used colours outside the palette | Polish | **Fixed.** Ink icons on mint-soft squares. |
+| 7 | The plan card looked like a stock SaaS card | Minor | **Fixed.** A berry "OUR TOP PICK" band with the sparkle, capital labels and black provider names. |
+| 8 | The business notice was an off-brand yellow alert | Minor | **Fixed.** A raised berry card with a sunflower rule and a capital heading. |
+| 9 | The scan looked like a default checklist | Minor | **Fixed.** It now runs on the berry stage with the sparkle. |
+| 10 | Usage icons used colours outside the palette | Polish | **Fixed.** Ink icons on soft-yellow squares. |
 | 11 | The callback dialog title isn't branded | Polish | **Kept** for now. It uses the shared dialog component. |
 | 12 | Bundle chips were cut off on phones | Minor | **Fixed.** They wrap. "Check Availability" still fits on the first screen at 390×844. |
 | 13 | At 200% zoom the address list opens below the fold | Minor | **Kept.** The list is a normal scrolling list, and the page scrolls to it. |
 | 14 | A stray dot in the trust strip on phones | Polish | **Fixed.** Dots only from tablet width up. |
 
-Tests: 243 passing. Typecheck and lint are clean, there is no horizontal overflow at 390 or 1366, and axe reports 0 violations.
+Tests: 245 passing. Typecheck and lint are clean, there is no horizontal overflow at 390 or 1366, and axe reports 0 violations.

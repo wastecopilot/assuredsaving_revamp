@@ -99,7 +99,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
     <div ref={wrap} className="relative">
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#0E7C5A]" />
+          <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-link" />
           <input
             ref={input}
             id="addr"
@@ -125,7 +125,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
             }}
             onFocus={() => setDismissed(false)}
             onKeyDown={onKey}
-            className={clsx(fieldClass, "min-h-14 rounded-full border-2 pl-12 text-[17px] focus:border-primary focus:ring-primary", noMatch || invalid ? "border-[#FCA5A5]" : "border-transparent")}
+            className={clsx(fieldClass, "min-h-14 rounded-full border-2 pl-12 text-[17px] focus:border-primary focus:ring-primary", noMatch || invalid ? "border-primary" : "border-transparent")}
           />
         </div>
         {action}
@@ -159,7 +159,7 @@ export const AddressSearch = forwardRef<AddressSearchHandle, { onChoose: (a: Sam
 
       {!verified &&
         (noMatch || invalid ? (
-          <p id="addr-msg" className="mt-2 pl-4 text-sm font-semibold text-[#FCA5A5]">
+          <p id="addr-msg" className="mt-2 inline-block rounded-full bg-white px-3 py-1 text-sm font-bold text-danger">
             {noMatch ? noMatchMsg : t("manualHint")}
           </p>
         ) : (

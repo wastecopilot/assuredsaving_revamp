@@ -153,7 +153,7 @@ describe("Service tiles (Hero)", () => {
     expect(tile).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(tile);
     expect(tile).toHaveAttribute("aria-pressed", "true");
-    expect(tile.getAttribute("style")).toMatch(/background: (rgb\(34, 211, 238\)|#22D3EE)/i);
+    expect(tile.getAttribute("style")).toMatch(/background: (rgb\(77, 163, 255\)|#4DA3FF)/i);
   });
   it("show five services in the official order", () => {
     inStore(<Hero />);

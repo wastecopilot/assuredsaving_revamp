@@ -240,7 +240,7 @@ function StartOver() {
 export function Footer() {
   const { s, t } = useStore();
   return (
-    <footer className="on-dark bg-navy text-white">
+    <footer className="on-dark bg-ink text-white">
       <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.2fr_2fr]">
           <div>
@@ -265,7 +265,7 @@ export function Footer() {
             ))}
           </nav>
         </div>
-        <p className="mt-10 border-t border-navy-line pt-6 text-sm text-on-dark-muted">© {new Date().getFullYear()} Assured Saving</p>
+        <p className="mt-10 border-t border-white/15 pt-6 text-sm text-on-dark-muted">© {new Date().getFullYear()} Assured Saving</p>
       </div>
     </footer>
   );

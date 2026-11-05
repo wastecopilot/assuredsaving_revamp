@@ -123,7 +123,7 @@ export function Hero() {
             })}
           </div>
           {tried && noService && (
-            <p id="hero-err" tabIndex={-1} role="alert" className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#FCA5A5] outline-none">
+            <p id="hero-err" tabIndex={-1} role="alert" className="mt-3 flex items-center gap-2 w-fit rounded-full bg-white px-3 py-1 text-sm font-bold text-danger outline-none">
               <AlertCircle aria-hidden className="size-4 shrink-0" />
               {t("pickServiceHint")}
             </p>
@@ -203,7 +203,7 @@ function ServiceTile({ id, on, onToggle }: { id: ServiceId; on: boolean; onToggl
       style={on ? { background: c.vivid, color: c.on, boxShadow: `0 0 0 1px ${c.vivid}` } : undefined}
     >
       <span className="flex shrink-0 items-center justify-between gap-2 sm:w-full sm:items-start">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9" style={on ? { background: "#0B1430", color: c.vivid } : { background: c.vivid, color: c.on }}>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9" style={on ? { background: "#1A1033", color: c.vivid } : { background: c.vivid, color: c.on }}>
           <Icon aria-hidden className="size-[18px]" strokeWidth={2.25} />
         </span>
         <span aria-hidden className={clsx("hidden size-5 items-center justify-center rounded-full sm:flex", on ? "bg-ink text-white" : "ring-1 ring-on-dark-muted")}>
